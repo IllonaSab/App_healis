@@ -1,60 +1,144 @@
-import { BreathingCircle } from "@/components/ui/BreathingCircle";
-import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
-import { ScreenContainer } from "@/components/ui/ScreenContainer";
-import { SectionHeader } from "@/components/ui/SectionHeader";
-import { StepItem } from "@/components/ui/StepItem";
-import { useEffect, useState } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import { useEffect, useRef, useState } from "react";
+import {
+  Animated,
+  Easing,
+  Text,
+  Vibration,
+  View,
+} from "react-native";
+import { Button } from "../../components/ui/Button";
+import { Card } from "../../components/ui/Card";
+import { ScreenContainer } from "../../components/ui/ScreenContainer";
+import { SectionHeader } from "../../components/ui/SectionHeader";
 
 export default function ToolsScreen() {
   const [isBreathing, setIsBreathing] = useState(false);
-  const [instruction, setInstruction] = useState("Prêt(e) ?");
+  const [breathPhase, setBreathPhase] = useState<"Inspirer" | "Expirer">("Inspirer");
+  const [countdown, setCountdown] = useState(4);
+  const breathAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    if (!isBreathing) {
-      setInstruction("Prêt(e) ?");
-      return;
+    let interval: ReturnType<typeof setInterval>;
+
+    if (isBreathing) {
+      const isInspiring = breathPhase === "Inspirer";
+      const duration = isInspiring ? 4000 : 6000;
+      const targetValue = isInspiring ? 1 : 0;
+
+      // Animation du cercle
+      Animated.timing(breathAnim, {
+        toValue: targetValue,
+        duration,
+        easing: Easing.inOut(Easing.quad),
+        useNativeDriver: true,
+      }).start();
+
+      // Compte à rebours seconde par seconde
+      interval = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            Vibration.vibrate(35);
+            setBreathPhase((current) => (current === "Inspirer" ? "Expirer" : "Inspirer"));
+            return isInspiring ? 6 : 4;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else {
+      breathAnim.stopAnimation();
+      breathAnim.setValue(0);
+      setBreathPhase("Inspirer");
+      setCountdown(4);
     }
-    setInstruction("Inspire lentement...");
-    const interval = setInterval(() => {
-      setInstruction((prev) =>
-        prev === "Inspire lentement..." ? "Expire doucement..." : "Inspire lentement..."
-      );
-    }, 5000);
+
     return () => clearInterval(interval);
-  }, [isBreathing]);
+  }, [isBreathing, breathPhase]);
+
+  const scale = breathAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 1.45],
+  });
+
+  const opacity = breathAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.4, 0.85],
+  });
 
   return (
     <ScreenContainer>
       <SectionHeader
         surtitle="Régulation nerveuse"
-        title="Boîte à outils"
-        description="Routines simples pour désamorcer l'anxiété et retrouver son ancrage."
+        title="Cohérence 4-6"
+        description="Une respiration rythmée pour activer le nerf vague, réduire la pression interne et retrouver le calme."
       />
 
       <Card>
-        <SectionHeader
-          title="Respiration apaisante (4-6)"
-          description="Allonge l'expiration pour stimuler le système parasympathique."
-        />
-        <BreathingCircle isActive={isBreathing} instruction={instruction} />
+        <Text className="text-base font-bold text-earth-heading mb-1">
+          Apaisement cardiaque
+        </Text>
+        <Text className="text-xs text-earth-muted leading-relaxed mb-4">
+          Inspire 4 secondes par le nez en relâchant le ventre, puis expire 6 secondes par la bouche comme dans une paille.
+        </Text>
+
+        {/* Cercle animé */}
+        <View className="items-center justify-center my-8 h-56">
+          {/* Halo d'expansion */}
+          <Animated.View
+            style={[
+              {
+                transform: [{ scale }],
+                opacity,
+              },
+            ]}
+            className="w-36 h-36 rounded-full bg-terracotta-100 items-center justify-center border border-terracotta-300"
+          >
+            <View className="w-24 h-24 rounded-full bg-terracotta-500/20 items-center justify-center">
+              <Ionicons name="heart" size={30} color="#C46851" />
+            </View>
+          </Animated.View>
+
+          {/* Affichage central de la phase et du compte à rebours */}
+          <View className="absolute items-center">
+            <Text className="text-sm font-bold text-earth-heading">
+              {isBreathing ? breathPhase : "Prêt(e) ?"}
+            </Text>
+            {isBreathing && (
+              <Text className="text-2xl font-extrabold text-terracotta-500 mt-1">
+                {countdown}s
+              </Text>
+            )}
+          </View>
+        </View>
+
+        {/* Repères visuels */}
+        <View className="flex-row justify-around bg-cream-50 p-3 rounded-xl border border-cream-200 mb-6">
+          <View className="items-center">
+            <Text className="text-[11px] font-semibold text-earth-muted">Inspiration</Text>
+            <Text className="text-xs font-bold text-earth-heading mt-0.5">4 secondes</Text>
+          </View>
+          <View className="w-px bg-cream-200" />
+          <View className="items-center">
+            <Text className="text-[11px] font-semibold text-earth-muted">Expiration</Text>
+            <Text className="text-xs font-bold text-earth-heading mt-0.5">6 secondes</Text>
+          </View>
+        </View>
+
         <Button
-          title={isBreathing ? "Terminer l'exercice" : "Commencer la session"}
+          title={isBreathing ? "Interrompre la session" : "Démarrer la respiration"}
           variant={isBreathing ? "outline" : "primary"}
           onPress={() => setIsBreathing(!isBreathing)}
         />
       </Card>
 
-      <Card variant="soft">
-        <SectionHeader
-          title="Technique d'ancrage 5-4-3-2-1"
-          description="Pour interrompre une boucle de pensées ou une compulsion."
-        />
-        <StepItem badge="5" label="choses que tu vois autour de toi" />
-        <StepItem badge="4" label="textures ou objets à toucher" />
-        <StepItem badge="3" label="sons que tu perçois au loin" />
-        <StepItem badge="2" label="odeurs identifiables" />
-        <StepItem badge="1" label="sensation corporelle apaisante" />
+      {/* Conseils doux avec le composant Card */}
+      <Card variant="soft" className="mt-4">
+        <Text className="text-xs font-bold text-terracotta-700 uppercase tracking-wider mb-1">
+          Rappel pour la pratique
+        </Text>
+        <Text className="text-xs text-earth-body leading-relaxed">
+          Ne cherche pas à bloquer ta respiration entre les deux phases. Enchaîne l'inspiration et l'expiration en un seul mouvement fluide, sans tension dans les épaules.
+        </Text>
       </Card>
     </ScreenContainer>
   );

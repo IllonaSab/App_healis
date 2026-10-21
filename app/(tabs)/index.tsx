@@ -1,7 +1,7 @@
-import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
-import { ScreenContainer } from "@/components/ui/ScreenContainer";
 import { Text, TouchableOpacity, View } from "react-native";
+import { Button } from "../../components/ui/Button";
+import { Card } from "../../components/ui/Card";
+import { ScreenContainer } from "../../components/ui/ScreenContainer";
 
 export default function HomeScreen() {
   const moods = [

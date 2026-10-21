@@ -1,11 +1,11 @@
-import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
-import { JournalEntryCard } from "@/components/ui/JournalEntryCard";
-import { ScreenContainer } from "@/components/ui/ScreenContainer";
-import { SectionHeader } from "@/components/ui/SectionHeader";
-import { supabase } from "@/lib/supabase";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Button } from "../../components/ui/Button";
+import { Card } from "../../components/ui/Card";
+import { JournalEntryCard } from "../../components/ui/JournalEntryCard";
+import { ScreenContainer } from "../../components/ui/ScreenContainer";
+import { SectionHeader } from "../../components/ui/SectionHeader";
+import { supabase } from "../../lib/supabase";
 
 interface JournalEntry {
   id: string;
