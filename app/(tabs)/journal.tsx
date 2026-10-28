@@ -1,317 +1,432 @@
-import { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Text, TextInput, TouchableOpacity, View } from "react-native";
-import { Button } from "../../components/ui/Button";
-import { Card } from "../../components/ui/Card";
-import { JournalEntryCard } from "../../components/ui/JournalEntryCard";
-import { ScreenContainer } from "../../components/ui/ScreenContainer";
-import { SectionHeader } from "../../components/ui/SectionHeader";
-import { supabase } from "../../lib/supabase";
+import { ScreenContainer } from "@/components/ui/ScreenContainer";
+import * as Haptics from "expo-haptics";
+import React, { useMemo, useState } from "react";
+import {
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
-interface JournalEntry {
+interface FeelingOption {
   id: string;
-  meal_type: string;
-  emotion: string;
-  hunger_level: number;
-  satiety_level: number;
-  reflection: string | null;
-  created_at: string;
+  emoji: string;
+  text: string;
+  color: string;
+  note: string;
 }
 
-const MEAL_TYPES = [
-  { id: "breakfast", label: "Petit-déjeuner" },
-  { id: "lunch", label: "Déjeuner" },
-  { id: "snack", label: "Collation" },
-  { id: "dinner", label: "Dîner" },
-  { id: "moment", label: "Moment libre" },
+const MEALS = [
+  { id: "breakfast", label: "Matin", emoji: "🥐" },
+  { id: "lunch", label: "Midi", emoji: "🥗" },
+  { id: "snack", label: "Pause", emoji: "🍎" },
+  { id: "dinner", label: "Soir", emoji: "🍲" },
 ];
 
-const EMOTIONS = [
-  { id: "serene", label: "Serein(e)", emoji: "🌿" },
-  { id: "anxious", label: "Anxieux(se)", emoji: "⚡" },
-  { id: "guilty", label: "Culpabilité", emoji: "🌧️" },
-  { id: "proud", label: "Fier(e)", emoji: "🌱" },
-  { id: "neutral", label: "Neutre", emoji: "☁️" },
+const FEELINGS: FeelingOption[] = [
+  {
+    id: "peaceful",
+    emoji: "😌",
+    text: "Serein",
+    color: "#6A8D73",
+    note: "Un instant de calme précieux. Savourez cette clarté.",
+  },
+  {
+    id: "fine",
+    emoji: "🙂",
+    text: "Bien",
+    color: "#8C7A6B",
+    note: "Votre équilibre se construit pas à pas, continuez à votre rythme.",
+  },
+  {
+    id: "full",
+    emoji: "😮‍💨",
+    text: "Lourd",
+    color: "#D98E73",
+    note: "Prenez quelques respirations lentes. Votre corps fait son travail.",
+  },
+  {
+    id: "discomfort",
+    emoji: "😣",
+    text: "Tendu",
+    color: "#C46851",
+    note: "Relâchez vos épaules et votre mâchoire. Vous êtes en sécurité ici.",
+  },
 ];
 
-export default function JournalScreen() {
-  const [selectedType, setSelectedType] = useState("lunch");
-  const [hungerLevel, setHungerLevel] = useState<number>(5);
-  const [satietyLevel, setSatietyLevel] = useState<number>(5);
-  const [selectedEmotion, setSelectedEmotion] = useState("serene");
-  const [reflection, setReflection] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [entries, setEntries] = useState<JournalEntry[]>([]);
-  const [loadingEntries, setLoadingEntries] = useState(true);
-
-  const fetchEntries = async () => {
-    try {
-      setLoadingEntries(true);
-      const { data, error } = await supabase
-        .from("journal_entries")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(10);
-
-      if (error) throw error;
-      setEntries(data || []);
-    } catch (err: any) {
-      console.error("Erreur chargement entrées:", err.message);
-    } finally {
-      setLoadingEntries(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchEntries();
+export default function OrganicJournalScreen() {
+  const defaultMealId = useMemo(() => {
+    const hour = new Date().getHours();
+    if (hour < 11) return "breakfast";
+    if (hour < 15) return "lunch";
+    if (hour < 18) return "snack";
+    return "dinner";
   }, []);
 
-  const handleSave = async () => {
-    setLoading(true);
-    try {
-      const { error } = await supabase.from("journal_entries").insert({
-        meal_type: selectedType,
-        emotion: selectedEmotion,
-        hunger_level: hungerLevel,
-        satiety_level: satietyLevel,
-        reflection: reflection.trim() || null,
-      });
+  const [selectedMeal, setSelectedMeal] = useState(defaultMealId);
+  const [selectedFeeling, setSelectedFeeling] = useState<string | null>(null);
+  const [isSaved, setIsSaved] = useState(false);
 
-      if (error) throw error;
+  // Historique fictif pour peupler le résumé de la journée
+  const [dayHistory, setDayHistory] = useState<Record<string, string>>({
+    breakfast: "😌",
+  });
 
-      Alert.alert("Enregistré", "Ta note a été déposée avec bienveillance.");
-      setReflection("");
-      fetchEntries();
-    } catch (err: any) {
-      Alert.alert("Erreur", err.message || "Impossible d'enregistrer la note.");
-    } finally {
-      setLoading(false);
+  const activeFeelingObj = FEELINGS.find((f) => f.id === selectedFeeling);
+
+  const handleSelectFeeling = (id: string) => {
+    if (Platform.OS !== "web") {
+      try {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      } catch {}
     }
-  };
+    setSelectedFeeling(id);
+    setIsSaved(true);
 
-  const getEmotionEmoji = (id: string) =>
-    EMOTIONS.find((e) => e.id === id)?.emoji || "✨";
-
-  const getMealLabel = (id: string) =>
-    MEAL_TYPES.find((m) => m.id === id)?.label || id;
-
-  const formatDate = (dateStr: string) => {
-    const d = new Date(dateStr);
-    return d.toLocaleDateString("fr-FR", {
-      day: "numeric",
-      month: "short",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    const match = FEELINGS.find((f) => f.id === id);
+    if (match) {
+      setDayHistory((prev) => ({ ...prev, [selectedMeal]: match.emoji }));
+    }
   };
 
   return (
-    <ScreenContainer>
-      {/* En-tête principal via SectionHeader */}
-      <SectionHeader
-        surtitle="Espace d'écoute"
-        title="Journal de bord"
-        description="Dépose ici tes ressentis, sans jugement ni pression."
-      />
+    <ScreenContainer scrollable>
+      
+      {/* 2. Titre et ruban du repas */}
+      <View style={styles.sectionHeaderRow}>
+        <Text style={styles.sectionTitle}>Déposer un instant</Text>
+        <Text style={styles.sectionSubtitle}>Choisissez le moment</Text>
+      </View>
 
-      {/* Type de moment */}
-      <Card>
-        <Text className="text-base font-semibold text-earth-heading mb-3">
-          Quel est ce moment ?
-        </Text>
-        <View className="flex-row flex-wrap gap-2">
-          {MEAL_TYPES.map((type) => {
-            const isSelected = selectedType === type.id;
-            return (
-              <TouchableOpacity
-                key={type.id}
-                onPress={() => setSelectedType(type.id)}
-                className={`px-3.5 py-2 rounded-xl border ${
-                  isSelected
-                    ? "bg-terracotta-500 border-terracotta-500"
-                    : "bg-cream-100 border-cream-200"
-                }`}
+      <View style={styles.ribbonContainer}>
+        {MEALS.map((meal) => {
+          const active = selectedMeal === meal.id;
+          const loggedEmoji = dayHistory[meal.id];
+
+          return (
+            <TouchableOpacity
+              key={meal.id}
+              onPress={() => {
+                if (Platform.OS !== "web") {
+                  try {
+                    Haptics.selectionAsync();
+                  } catch {}
+                }
+                setSelectedMeal(meal.id);
+                setIsSaved(false);
+              }}
+              style={[styles.ribbonItem, active && styles.ribbonItemActive]}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.ribbonEmoji}>{meal.emoji}</Text>
+              <Text style={[styles.ribbonText, active && styles.ribbonTextActive]}>
+                {meal.label}
+              </Text>
+              {loggedEmoji ? (
+                <View style={styles.loggedDot}>
+                  <Text style={{ fontSize: 9 }}>{loggedEmoji}</Text>
+                </View>
+              ) : null}
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      {/* 3. Les galets de sensation */}
+      <Text style={styles.promptLabel}>Votre sensation corporelle</Text>
+      <View style={styles.pebblesGrid}>
+        {FEELINGS.map((item) => {
+          const isSelected = selectedFeeling === item.id;
+          return (
+            <Pressable
+              key={item.id}
+              onPress={() => handleSelectFeeling(item.id)}
+              style={({ pressed }) => [
+                styles.pebble,
+                isSelected && {
+                  backgroundColor: "#FFFFFF",
+                  borderColor: item.color,
+                  borderWidth: 2,
+                  shadowColor: item.color,
+                  shadowOffset: { width: 0, height: 6 },
+                  shadowOpacity: 0.2,
+                  shadowRadius: 10,
+                  elevation: 3,
+                  transform: [{ scale: 1.04 }],
+                },
+                pressed && { transform: [{ scale: 0.97 }] },
+              ]}
+            >
+              <Text style={styles.pebbleEmoji}>{item.emoji}</Text>
+              <Text
+                style={[
+                  styles.pebbleText,
+                  isSelected && { color: item.color, fontWeight: "700" },
+                ]}
               >
-                <Text
-                  className={`text-xs font-semibold ${
-                    isSelected ? "text-white" : "text-earth-body"
-                  }`}
+                {item.text}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      {/* 4. Réaction immédiate ou invite */}
+      <View style={styles.feedbackContainer}>
+        {activeFeelingObj ? (
+          <View
+            style={[
+              styles.whisperCard,
+              { borderLeftColor: activeFeelingObj.color },
+            ]}
+          >
+            <View style={styles.whisperHeader}>
+              <Text style={styles.whisperTitle}>Écoute bienveillante</Text>
+            </View>
+            <Text style={styles.whisperText}>{activeFeelingObj.note}</Text>
+            {isSaved ? (
+              <View style={styles.savedPill}>
+                <Text style={styles.savedText}>✓ Enregistré dans votre journée</Text>
+              </View>
+            ) : null}
+          </View>
+        ) : (
+          <View style={styles.idleCard}>
+            <Text style={styles.idleText}>
+              Touchez une pastille pour écouter votre corps sans obligation de justification.
+            </Text>
+          </View>
+        )}
+      </View>
+
+      {/* 5. Le fil d'Ariane de la journée (évite le vide en bas) */}
+      <View style={styles.daySummaryBox}>
+        <Text style={styles.summaryTitle}>Votre fil de présence aujourd'hui</Text>
+        <View style={styles.timelineRow}>
+          {MEALS.map((m) => {
+            const hasEntry = !!dayHistory[m.id];
+            return (
+              <View key={m.id} style={styles.timelineItem}>
+                <View
+                  style={[
+                    styles.timelineBadge,
+                    hasEntry && styles.timelineBadgeDone,
+                  ]}
                 >
-                  {type.label}
-                </Text>
-              </TouchableOpacity>
+                  <Text style={styles.timelineEmoji}>
+                    {dayHistory[m.id] || "·"}
+                  </Text>
+                </View>
+                <Text style={styles.timelineLabel}>{m.label}</Text>
+              </View>
             );
           })}
         </View>
-      </Card>
-
-      {/* Météo intérieure */}
-      <Card>
-        <Text className="text-base font-semibold text-earth-heading mb-1">
-          Météo intérieure
-        </Text>
-        <Text className="text-xs text-earth-muted mb-3">
-          Quelle émotion est la plus présente en ce moment ?
-        </Text>
-        <View className="flex-row justify-between">
-          {EMOTIONS.map((emo) => {
-            const isSelected = selectedEmotion === emo.id;
-            return (
-              <TouchableOpacity
-                key={emo.id}
-                onPress={() => setSelectedEmotion(emo.id)}
-                className={`items-center p-2.5 rounded-2xl w-[18%] border ${
-                  isSelected
-                    ? "bg-terracotta-300/40 border-terracotta-500"
-                    : "bg-cream-100 border-cream-200"
-                }`}
-              >
-                <Text className="text-xl mb-1">{emo.emoji}</Text>
-                <Text
-                  className="text-[10px] font-medium text-earth-heading text-center"
-                  numberOfLines={1}
-                >
-                  {emo.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      </Card>
-
-      {/* Sensations corporelles */}
-      <Card>
-        <Text className="text-base font-semibold text-earth-heading mb-1">
-          Sensations physiques
-        </Text>
-        <Text className="text-xs text-earth-muted mb-4">
-          Évalue tes signaux corporels avant et après.
-        </Text>
-
-        {/* Faim */}
-        <View className="mb-4">
-          <View className="flex-row justify-between items-center mb-2">
-            <Text className="text-xs font-semibold text-earth-body">
-              Niveau de faim (avant)
-            </Text>
-            <Text className="text-xs font-bold text-terracotta-500">
-              {hungerLevel} / 10
-            </Text>
-          </View>
-          <View className="flex-row justify-between">
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
-              <TouchableOpacity
-                key={num}
-                onPress={() => setHungerLevel(num)}
-                className={`w-7 h-7 rounded-lg items-center justify-center border ${
-                  hungerLevel === num
-                    ? "bg-terracotta-500 border-terracotta-500"
-                    : "bg-cream-100 border-cream-200"
-                }`}
-              >
-                <Text
-                  className={`text-xs font-semibold ${
-                    hungerLevel === num ? "text-white" : "text-earth-muted"
-                  }`}
-                >
-                  {num}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* Satiété */}
-        <View>
-          <View className="flex-row justify-between items-center mb-2">
-            <Text className="text-xs font-semibold text-earth-body">
-              Niveau de satiété (après)
-            </Text>
-            <Text className="text-xs font-bold text-terracotta-500">
-              {satietyLevel} / 10
-            </Text>
-          </View>
-          <View className="flex-row justify-between">
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
-              <TouchableOpacity
-                key={num}
-                onPress={() => setSatietyLevel(num)}
-                className={`w-7 h-7 rounded-lg items-center justify-center border ${
-                  satietyLevel === num
-                    ? "bg-terracotta-500 border-terracotta-500"
-                    : "bg-cream-100 border-cream-200"
-                }`}
-              >
-                <Text
-                  className={`text-xs font-semibold ${
-                    satietyLevel === num ? "text-white" : "text-earth-muted"
-                  }`}
-                >
-                  {num}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-      </Card>
-
-      {/* Pensées libres */}
-      <Card>
-        <Text className="text-base font-semibold text-earth-heading mb-1">
-          Pensées & Contexte
-        </Text>
-        <TextInput
-          multiline
-          numberOfLines={4}
-          value={reflection}
-          onChangeText={setReflection}
-          placeholder="Écris librement ici ce qui te traverse l'esprit..."
-          placeholderTextColor="#9B8A85"
-          className="bg-cream-50 border border-cream-200 rounded-2xl p-3.5 text-sm text-earth-heading min-h-[90px]"
-          textAlignVertical="top"
-        />
-      </Card>
-
-      {/* Bouton d'action réutilisable */}
-      {loading ? (
-        <ActivityIndicator size="small" color="#C46851" className="my-6" />
-      ) : (
-        <Button
-          title="Enregistrer cette note"
-          variant="primary"
-          className="mt-1 mb-8"
-          onPress={handleSave}
-        />
-      )}
-
-      {/* Section historique avec SectionHeader */}
-      <SectionHeader
-        surtitle="Passage en revue"
-        title="Tes notes précédentes"
-      />
-
-      {loadingEntries ? (
-        <ActivityIndicator size="small" color="#C46851" className="my-4" />
-      ) : entries.length === 0 ? (
-        <Card variant="soft">
-          <Text className="text-sm text-earth-muted text-center py-2">
-            Aucune note pour le moment. Prends ton temps.
-          </Text>
-        </Card>
-      ) : (
-        entries.map((item) => (
-          <JournalEntryCard
-            key={item.id}
-            emoji={getEmotionEmoji(item.emotion)}
-            mealLabel={getMealLabel(item.meal_type)}
-            dateStr={formatDate(item.created_at)}
-            hungerLevel={item.hunger_level}
-            satietyLevel={item.satiety_level}
-            reflection={item.reflection}
-          />
-        ))
-      )}
-
-      <View className="h-10" />
+      </View>
     </ScreenContainer>
   );
 }
+
+const styles = StyleSheet.create({
+  sectionHeaderRow: {
+    marginBottom: 10,
+  },
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#38231E",
+    letterSpacing: -0.3,
+  },
+  sectionSubtitle: {
+    fontSize: 12.5,
+    color: "#8C7A6B",
+    marginTop: 2,
+  },
+  ribbonContainer: {
+    flexDirection: "row",
+    backgroundColor: "#F2ECE4",
+    padding: 4,
+    borderRadius: 20,
+    marginBottom: 22,
+  },
+  ribbonItem: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 9,
+    borderRadius: 16,
+    gap: 5,
+    position: "relative",
+  },
+  ribbonItemActive: {
+    backgroundColor: "#FFFFFF",
+    shadowColor: "#38231E",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 5,
+    elevation: 2,
+  },
+  ribbonEmoji: {
+    fontSize: 13,
+  },
+  ribbonText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#8C7A6B",
+  },
+  ribbonTextActive: {
+    color: "#38231E",
+    fontWeight: "700",
+  },
+  loggedDot: {
+    position: "absolute",
+    top: 3,
+    right: 4,
+  },
+  promptLabel: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#5C3636",
+    marginBottom: 10,
+    marginLeft: 2,
+  },
+  pebblesGrid: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 8,
+    marginBottom: 18,
+  },
+  pebble: {
+    flex: 1,
+    aspectRatio: 0.95,
+    backgroundColor: "#FDFBF9",
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1.5,
+    borderColor: "#EDE5DB",
+    paddingVertical: 8,
+  },
+  pebbleEmoji: {
+    fontSize: 26,
+    marginBottom: 4,
+  },
+  pebbleText: {
+    fontSize: 11.5,
+    fontWeight: "600",
+    color: "#5C3636",
+    letterSpacing: -0.1,
+  },
+  feedbackContainer: {
+    marginBottom: 20,
+  },
+  whisperCard: {
+    backgroundColor: "#FFFFFF",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 18,
+    borderLeftWidth: 4,
+    shadowColor: "#38231E",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  whisperHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 4,
+  },
+  sparkleIcon: {
+    fontSize: 13,
+  },
+  whisperTitle: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#38231E",
+  },
+  whisperText: {
+    fontSize: 12.5,
+    color: "#5C4638",
+    lineHeight: 18,
+  },
+  savedPill: {
+    alignSelf: "flex-start",
+    backgroundColor: "#EFF6F0",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  savedText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#5B8365",
+  },
+  idleCard: {
+    backgroundColor: "#F9F6F1",
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "#EFE8DC",
+    alignItems: "center",
+  },
+  idleText: {
+    fontSize: 12,
+    color: "#A89A8F",
+    fontStyle: "italic",
+    textAlign: "center",
+    lineHeight: 17,
+  },
+  daySummaryBox: {
+    backgroundColor: "#FFFFFF",
+    padding: 16,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: "#EFE8DC",
+    marginBottom: 24,
+  },
+  summaryTitle: {
+    fontSize: 12.5,
+    fontWeight: "700",
+    color: "#38231E",
+    marginBottom: 14,
+  },
+  timelineRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  timelineItem: {
+    alignItems: "center",
+    flex: 1,
+  },
+  timelineBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 14,
+    backgroundColor: "#F7F2EC",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 6,
+    borderWidth: 1,
+    borderColor: "#EADBCE",
+  },
+  timelineBadgeDone: {
+    backgroundColor: "#FFFFFF",
+    borderColor: "#C46851",
+  },
+  timelineEmoji: {
+    fontSize: 16,
+    color: "#A89A8F",
+  },
+  timelineLabel: {
+    fontSize: 11,
+    color: "#8C7A6B",
+    fontWeight: "600",
+  },
+});

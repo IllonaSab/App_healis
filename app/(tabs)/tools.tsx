@@ -1,11 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useRef, useState } from "react";
 import {
-  Animated,
-  Easing,
-  Text,
-  Vibration,
-  View,
+    Animated,
+    Easing,
+    Text,
+    Vibration,
+    View,
 } from "react-native";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
