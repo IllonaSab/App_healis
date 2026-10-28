@@ -1,99 +1,229 @@
-import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
-import { Input } from "@/components/ui/Input";
-import { ScreenContainer } from "@/components/ui/ScreenContainer";
-import { SectionHeader } from "@/components/ui/SectionHeader";
-import { supabase } from "@/lib/supabase";
-import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Linking, Text, View } from "react-native";
+import * as Haptics from "expo-haptics";
+import React, { useState } from "react";
+import {
+  Alert,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { Button } from "../../components/ui/Button/Button";
+import { Card } from "../../components/ui/Card/Card";
+import { ScreenContainer } from "../../components/ui/ScreenContainer/ScreenContainer";
+import { SectionHeader } from "../../components/ui/SectionHeader/SectionHeader";
+import { SettingRow } from "../../components/ui/SettingRow/SettingRow";
+
+const WEATHER_STATES = ["Sereine", "En chemin", "Brouillard", "Apaisée"];
 
 export default function ProfileScreen() {
-  const [userEmail, setUserEmail] = useState<string>("utilisateur@healis.app");
-  const [newPassword, setNewPassword] = useState("");
-  const [loadingPass, setLoadingPass] = useState(false);
+  const [weatherIdx, setWeatherIdx] = useState(0);
 
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data?.user?.email) setUserEmail(data.user.email);
-    });
-  }, []);
-
-  const handleUpdatePassword = async () => {
-    if (newPassword.length < 6) {
-      Alert.alert("Erreur", "Minimum 6 caractères.");
-      return;
+  const cycleWeather = () => {
+    if (Platform.OS !== "web") {
+      try {
+        Haptics.selectionAsync();
+      } catch {}
     }
-    setLoadingPass(true);
-    try {
-      const { error } = await supabase.auth.updateUser({ password: newPassword });
-      if (error) throw error;
-      Alert.alert("Succès", "Mot de passe mis à jour.");
-      setNewPassword("");
-    } catch (err: any) {
-      Alert.alert("Erreur", err.message);
-    } finally {
-      setLoadingPass(false);
-    }
+    setWeatherIdx((prev) => (prev + 1) % WEATHER_STATES.length);
   };
 
-  const handleStripe = () => {
-    Linking.openURL("https://billing.stripe.com/p/login/test_healis").catch(() =>
-      Alert.alert("Erreur", "Lien indisponible")
+  const confirmLogout = () => {
+    Alert.alert(
+      "Déconnexion",
+      "Souhaitez-vous fermer votre session sur cet appareil ?",
+      [
+        { text: "Annuler", style: "cancel" },
+        { text: "Se déconnecter", style: "destructive", onPress: () => {} },
+      ]
+    );
+  };
+
+  const confirmDelete = () => {
+    Alert.alert(
+      "Zone critique",
+      "Cette action supprimera définitivement votre compte et tout votre historique thérapeutique.",
+      [
+        { text: "Conserver mon compte", style: "cancel" },
+        { text: "Supprimer définitivement", style: "destructive", onPress: () => {} },
+      ]
     );
   };
 
   return (
-    <ScreenContainer>
+    <ScreenContainer scrollable>
       <SectionHeader
-        surtitle="Mon Espace"
-        title="Profil"
-        description="Gère ton compte et ton abonnement."
+        surtitle="Espace sécurisé"
+        title="Profil & Repères"
+        description="Gérez votre compte et vos accès en toute sérénité."
       />
 
-      {/* Identité & Mot de passe */}
-      <Card>
-        <Text className="text-xs font-semibold text-earth-muted uppercase mb-1">Email</Text>
-        <Text className="text-sm font-bold text-earth-heading mb-4">{userEmail}</Text>
-
-        <Input
-          label="Nouveau mot de passe"
-          secureTextEntry
-          placeholder="Au moins 6 caractères"
-          value={newPassword}
-          onChangeText={setNewPassword}
-        />
-
-        {loadingPass ? (
-          <ActivityIndicator color="#C46851" className="py-2" />
-        ) : (
-          <Button
-            title="Mettre à jour le mot de passe"
-            variant="secondary"
-            onPress={handleUpdatePassword}
-          />
-        )}
-      </Card>
-
-      {/* Abonnement */}
-      <Card variant="highlight">
-        <View className="flex-row items-center justify-between mb-3">
-          <Text className="text-sm font-bold text-earth-heading">Pass Sérénité</Text>
-          <Text className="text-xs font-bold text-terracotta-700">ACTIF</Text>
+      {/* 1. IDENTITÉ VISUELLE & PHRASE D'ANCRAGE */}
+      <Card style={styles.card}>
+        <View style={styles.userRow}>
+          <View style={styles.natureBadge}>
+            <Text style={styles.natureInitial}>C</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.userName}>Camille Durand</Text>
+            <TouchableOpacity
+              onPress={cycleWeather}
+              activeOpacity={0.7}
+              style={styles.weatherButton}
+            >
+              <Text style={styles.weatherTag}>Météo d'ancrage</Text>
+              <Text style={styles.weatherValue}>{WEATHER_STATES[weatherIdx]} ▾</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-        <Button
-          title="Gérer l'abonnement (Stripe)"
-          variant="outline"
-          onPress={handleStripe}
+
+        <Card variant="warm" style={styles.anchorQuoteBox}>
+          <Text style={styles.anchorQuote}>
+            « Chaque petit pas vers la paix alimentaire compte. »
+          </Text>
+        </Card>
+      </Card>
+
+      {/* 2. SÉCURITÉ & PARAMÈTRES DU COMPTE */}
+      <Card style={styles.card}>
+        <Text style={styles.cardTitle}>Paramètres du compte</Text>
+        <Text style={styles.cardDesc}>
+          Informations de connexion et accompagnement en cours.
+        </Text>
+
+        <SettingRow
+          title="Adresse e-mail"
+          value="camille.durand@email.com"
+          actionLabel="Modifier"
+          onPress={() => {}}
+        />
+
+        <SettingRow
+          title="Mot de passe"
+          value="••••••••••••"
+          actionLabel="Changer"
+          onPress={() => {}}
+        />
+
+        <SettingRow
+          title="Langue"
+          value="Français (FR)"
+          actionLabel="Changer"
+          onPress={() => {}}
+        />
+
+        <SettingRow
+          title="Notifications"
+          value="Rappels bienveillants & hydratation"
+          actionLabel="Gérer"
+          onPress={() => {}}
+        />
+
+        <SettingRow
+          title="Abonnement"
+          value="Accompagnement Premium (12/12/2026)"
+          actionLabel="Gérer"
+          onPress={() => {}}
+          isLast
         />
       </Card>
 
-      {/* Déconnexion */}
-      <Button
-        title="Se déconnecter"
-        variant="secondary"
-        className="mt-2 mb-8 border-transparent bg-transparent"
-        onPress={() => supabase.auth.signOut()}
-      />
+      {/* 3. DÉCONNEXION & SUPPRESSION */}
+      <Card style={[styles.card, { marginBottom: 32 }]}>
+        <Text style={styles.cardTitle}>Gestion de session</Text>
+        <Text style={styles.cardDesc}>
+          Contrôlez vos accès ou supprimez définitivement vos données.
+        </Text>
+
+        <View style={styles.actionsContainer}>
+          <Button
+            title="Se déconnecter"
+            variant="outline"
+            onPress={confirmLogout}
+          />
+
+          <Button
+            title="Supprimer mon compte"
+            variant="danger"
+            onPress={confirmDelete}
+          />
+        </View>
+      </Card>
     </ScreenContainer>
   );
 }
+
+const styles = StyleSheet.create({
+  card: {
+    marginBottom: 16,
+  },
+  userRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+  },
+  natureBadge: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: "#FAF6F1",
+    borderWidth: 1.5,
+    borderColor: "#E3B89B",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  natureInitial: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#C46851",
+  },
+  userName: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: "#38231E",
+    marginBottom: 3,
+  },
+  weatherButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  weatherTag: {
+    fontSize: 11.5,
+    color: "#8C7A6B",
+  },
+  weatherValue: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#C46851",
+  },
+  anchorQuoteBox: {
+    marginTop: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderLeftWidth: 3,
+    borderLeftColor: "#C46851",
+  },
+  anchorQuote: {
+    fontSize: 13,
+    fontStyle: "italic",
+    color: "#5C3636",
+    lineHeight: 18,
+  },
+  cardTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#38231E",
+  },
+  cardDesc: {
+    fontSize: 12.5,
+    color: "#6B584C",
+    lineHeight: 17,
+    marginTop: 4,
+    marginBottom: 16,
+  },
+  actionsContainer: {
+    gap: 12,
+    marginTop: 4,
+  },
+});

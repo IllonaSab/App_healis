@@ -1,12 +1,7 @@
-import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
-import { Input } from "@/components/ui/Input";
-import { ScreenContainer } from "@/components/ui/ScreenContainer";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   Image,
   KeyboardAvoidingView,
@@ -16,6 +11,11 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { Button } from "../../../components/ui/Button/Button";
+import { Card } from "../../../components/ui/Card/Card";
+import { Input } from "../../../components/ui/Input/Input";
+import { ScreenContainer } from "../../../components/ui/ScreenContainer/ScreenContainer";
+import { styles } from "./register.styles";
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -75,51 +75,28 @@ export default function RegisterScreen() {
     <ScreenContainer>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={{ flex: 1 }}
+        style={styles.keyboardContainer}
       >
         <ScrollView
-          contentContainerStyle={{ flexGrow: 1, justifyContent: "center", paddingBottom: 24 }}
+          contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
           {/* En-tête Logo + Titre */}
-          <View
-            className="w-full items-center justify-center pt-4 pb-4"
-            style={{ width: "100%", alignItems: "center", justifyContent: "center" }}
-          >
+          <View style={styles.header}>
             <Image
               source={require("../../assets/images/logo.png")}
-              style={{ width: 180, height: 90, alignSelf: "center" }}
+              style={styles.logoImage}
               resizeMode="contain"
             />
-            <Text
-              className="text-xs text-earth-muted mt-2 text-center"
-              style={{ textAlign: "center", color: "#8C7A6B", fontSize: 13, marginTop: 8 }}
-            >
-              Inscription
-            </Text>
+            <Text style={styles.subtitle}>Inscription</Text>
           </View>
 
           {/* Formulaire dans la Card */}
           <Card>
             {errorMessage ? (
-              <View
-                className="bg-red-50 border border-red-200 p-3 rounded-xl mb-4"
-                style={{
-                  backgroundColor: "#FEF2F2",
-                  borderColor: "#FECACA",
-                  borderWidth: 1,
-                  padding: 12,
-                  borderRadius: 12,
-                  marginBottom: 16,
-                }}
-              >
-                <Text
-                  className="text-xs font-semibold text-red-600 text-center"
-                  style={{ color: "#DC2626", textAlign: "center", fontSize: 12, fontWeight: "600" }}
-                >
-                  {errorMessage}
-                </Text>
+              <View style={styles.errorBanner}>
+                <Text style={styles.errorText}>{errorMessage}</Text>
               </View>
             ) : null}
 
@@ -129,61 +106,54 @@ export default function RegisterScreen() {
               autoCapitalize="none"
               autoCorrect={false}
               value={email}
-              onChangeText={(text) => {
+              onChangeText={(text: string) => {
                 setEmail(text);
                 if (errorMessage) setErrorMessage(null);
               }}
               placeholder="nom@exemple.fr"
+              containerStyle={styles.inputSpacing}
             />
 
             <Input
               label="Mot de passe"
               secureTextEntry
               value={password}
-              onChangeText={(text) => {
+              onChangeText={(text: string) => {
                 setPassword(text);
                 if (errorMessage) setErrorMessage(null);
               }}
               placeholder="Au moins 6 caractères"
+              containerStyle={styles.inputSpacing}
             />
 
             <Input
               label="Confirmation du mot de passe"
               secureTextEntry
               value={confirmPassword}
-              onChangeText={(text) => {
+              onChangeText={(text: string) => {
                 setConfirmPassword(text);
                 if (errorMessage) setErrorMessage(null);
               }}
               placeholder="Répète ton mot de passe"
+              containerStyle={styles.inputSpacing}
             />
 
-            {loading ? (
-              <ActivityIndicator color="#C46851" style={{ paddingVertical: 12 }} />
-            ) : (
-              <Button
-                title="Créer un compte"
-                variant="primary"
-                onPress={handleRegister}
-                className="mt-2 mb-3"
-              />
-            )}
+            <Button
+              title="Créer un compte"
+              variant="primary"
+              loading={loading}
+              onPress={handleRegister}
+              style={styles.submitButton}
+            />
 
             <TouchableOpacity
               onPress={() => router.back()}
-              style={{ paddingVertical: 10, alignItems: "center" }}
+              style={styles.loginLinkButton}
+              activeOpacity={0.7}
             >
-              <Text
-                className="text-xs text-earth-muted"
-                style={{ fontSize: 12, color: "#8C7A6B" }}
-              >
+              <Text style={styles.loginLinkText}>
                 Déjà inscrite ?{" "}
-                <Text
-                  className="font-bold text-terracotta-500"
-                  style={{ color: "#C46851", fontWeight: "bold" }}
-                >
-                  Se connecter
-                </Text>
+                <Text style={styles.loginLinkHighlight}>Se connecter</Text>
               </Text>
             </TouchableOpacity>
           </Card>

@@ -1,38 +1,51 @@
-import { Text, TouchableOpacity, View } from "react-native";
-import { Button } from "../../components/ui/Button";
-import { Card } from "../../components/ui/Card";
-import { ScreenContainer } from "../../components/ui/ScreenContainer";
+import { useRouter } from "expo-router";
+import React, { useState } from "react";
+import { StyleSheet, Text, View } from "react-native";
+import { JournalCard } from "../../components/ui//JournalCard/JournalCard";
+import { Button } from "../../components/ui/Button/Button";
+import { Card } from "../../components/ui/Card/Card";
+import { ScreenContainer } from "../../components/ui/ScreenContainer/ScreenContainer";
+import { SectionHeader } from "../../components/ui/SectionHeader/SectionHeader";
+
+const MOODS = [
+  { id: "calm", label: "Calme", color: "#6A8D73" },
+  { id: "anxious", label: "Anxieux", color: "#C46851" },
+  { id: "soothed", label: "Apaisé", color: "#D98E73" },
+  { id: "tired", label: "Fatigué", color: "#8C7A6B" },
+];
 
 export default function HomeScreen() {
-  const moods = [
-    { label: "Calme", emoji: "🌿" },
-    { label: "Anxieux", emoji: "⚡" },
-    { label: "Apaisé", emoji: "☀️" },
-    { label: "Fatigué", emoji: "🌙" },
-  ];
+  const router = useRouter();
+  const [selectedMood, setSelectedMood] = useState<string | null>(null);
+
+  const handleOpenSOS = () => {
+    router.push("/(tabs)/tools");
+  };
 
   return (
     <ScreenContainer>
-      <View className="mb-6">
-        <Text className="text-sm font-semibold text-terracotta-500 uppercase tracking-wider">
-          Healis
-        </Text>
-        <Text className="text-3xl font-bold text-earth-heading mt-1">
-          Comment vas-tu aujourd'hui ?
-        </Text>
-      </View>
+      <SectionHeader
+        surtitle="Healis"
+        title="Comment vas-tu aujourd'hui ?"
+      />
 
-      <Card>
-        <Text className="text-lg font-bold text-earth-heading">Ton pouls émotionnel</Text>
-        <Text className="text-sm text-earth-body mt-1 mb-4">
+      <Card style={styles.card}>
+        <Text style={styles.cardTitle}>Ton pouls émotionnel</Text>
+        <Text style={styles.cardDescription}>
           Sélectionne ton état d'esprit du moment.
         </Text>
-        <View className="flex-row justify-between">
-          {moods.map((item, idx) => (
-            <TouchableOpacity key={idx} className="items-center bg-cream-100 p-3 rounded-2xl w-[22%]">
-              <Text className="text-2xl mb-1">{item.emoji}</Text>
-              <Text className="text-xs font-semibold text-earth-body">{item.label}</Text>
-            </TouchableOpacity>
+
+        <View style={styles.moodsRow}>
+          {MOODS.map((mood) => (
+            <View key={mood.id} style={styles.moodItemWrapper}>
+              <JournalCard
+                label={mood.label}
+                isSelected={selectedMood === mood.id}
+                activeColor={mood.color}
+                onPress={() => setSelectedMood(mood.id)}
+                aspectSquare
+              />
+            </View>
           ))}
         </View>
       </Card>
@@ -40,15 +53,50 @@ export default function HomeScreen() {
       <Button
         variant="sos"
         title="Besoin d'apaisement ? (Mode SOS)"
-        className="mb-4"
-        onPress={() => console.log("Ouvrir SOS")}
+        style={styles.sosButton}
+        onPress={handleOpenSOS}
       />
 
-      <Card variant="highlight">
-        <Text className="text-sm text-earth-heading italic leading-relaxed">
+      <Card variant="warm" style={styles.card}>
+        <Text style={styles.quoteText}>
           « Le progrès n'est pas linéaire. Prends soin de toi, un pas après l'autre. »
         </Text>
       </Card>
     </ScreenContainer>
   );
 }
+
+const styles = StyleSheet.create({
+  card: {
+    marginBottom: 16,
+  },
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#38231E",
+  },
+  cardDescription: {
+    fontSize: 13,
+    color: "#8C7A6B",
+    marginTop: 4,
+    marginBottom: 16,
+    lineHeight: 18,
+  },
+  moodsRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  moodItemWrapper: {
+    flex: 1,
+  },
+  sosButton: {
+    marginBottom: 16,
+  },
+  quoteText: {
+    fontSize: 13.5,
+    fontStyle: "italic",
+    color: "#5C3636",
+    lineHeight: 20,
+    textAlign: "center",
+  },
+});

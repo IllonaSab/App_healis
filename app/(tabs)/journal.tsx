@@ -1,35 +1,53 @@
-import { Card } from "@/components/ui/Card";
-import { ScreenContainer } from "@/components/ui/ScreenContainer";
-import { SectionHeader } from "@/components/ui/SectionHeader";
-import { WaterTracker } from "@/components/ui/WaterTracker";
 import React, { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { JournalCard } from "../../components/ui//JournalCard/JournalCard";
+import { Card } from "../../components/ui/Card/Card";
+import { ScreenContainer } from "../../components/ui/ScreenContainer/ScreenContainer";
+import { SectionHeader } from "../../components/ui/SectionHeader/SectionHeader";
+import { WaterTracker } from "../../components/ui/WaterTracker/WaterTracker";
 
-const MEALS = [
-  { id: "matin", label: "Matin", emoji: "🥐" },
-  { id: "midi", label: "Midi", emoji: "🥗" },
-  { id: "pause", label: "Pause", emoji: "🍎" },
-  { id: "soir", label: "Soir", emoji: "🍲" },
+interface Meal {
+  id: string;
+  label: string;
+  shortLabel: string;
+}
+
+interface Feeling {
+  id: string;
+  label: string;
+  color: string;
+  note: string;
+}
+
+const MEALS: Meal[] = [
+  { id: "matin", label: "Matin", shortLabel: "M" },
+  { id: "midi", label: "Midi", shortLabel: "M" },
+  { id: "pause", label: "Pause", shortLabel: "P" },
+  { id: "soir", label: "Soir", shortLabel: "S" },
 ];
 
-const FEELINGS = [
-  { id: "serein", label: "Serein", emoji: "😌", color: "#6A8D73", note: "Savourez cette légèreté." },
-  { id: "bien", label: "Bien", emoji: "🙂", color: "#8C7A6B", note: "Continuez à votre rythme." },
-  { id: "lourd", label: "Lourd", emoji: "😮‍💨", color: "#D98E73", note: "Respirez lentement, le corps digère." },
-  { id: "tendu", label: "Tendu", emoji: "😣", color: "#C46851", note: "Relâchez vos épaules, tout va bien." },
+const FEELINGS: Feeling[] = [
+  { id: "serein", label: "Serein", color: "#6A8D73", note: "Savourez cette légèreté." },
+  { id: "bien", label: "Bien", color: "#8C7A6B", note: "Continuez à votre rythme." },
+  { id: "lourd", label: "Lourd", color: "#D98E73", note: "Respirez lentement, le corps digère." },
+  { id: "tendu", label: "Tendu", color: "#C46851", note: "Relâchez vos épaules, tout va bien." },
 ];
 
 export default function JournalScreen() {
-  const [meal, setMeal] = useState("midi");
+  const [meal, setMeal] = useState<string>("midi");
   const [feeling, setFeeling] = useState<string | null>(null);
-  const [log, setLog] = useState<Record<string, string>>({ matin: "😌" });
-  const [water, setWater] = useState(2);
+  const [log, setLog] = useState<Record<string, string>>({ matin: "serein" });
+  const [water, setWater] = useState<number>(2);
 
   const activeObj = FEELINGS.find((f) => f.id === feeling);
 
-  const selectFeeling = (item: (typeof FEELINGS)[0]) => {
+  const selectFeeling = (item: Feeling) => {
     setFeeling(item.id);
-    setLog((prev) => ({ ...prev, [meal]: item.emoji }));
+    setLog((prev) => ({ ...prev, [meal]: item.id }));
+  };
+
+  const getFeelingColor = (feelingId?: string) => {
+    return FEELINGS.find((f) => f.id === feelingId)?.color;
   };
 
   return (
@@ -39,54 +57,41 @@ export default function JournalScreen() {
         title="Comment va votre corps ?"
       />
 
-      {/* 1. Ruban des repas */}
+      {/* 1. Ruban des repas (100 % typographique) */}
       <View style={styles.ribbon}>
-        {MEALS.map((m) => (
-          <TouchableOpacity
-            key={m.id}
-            onPress={() => setMeal(m.id)}
-            style={[styles.ribbonTab, meal === m.id && styles.ribbonActive]}
-          >
-            <Text style={{ fontSize: 13 }}>{m.emoji}</Text>
-            <Text style={[styles.ribbonText, meal === m.id && styles.boldText]}>
-              {m.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {/* 2. Galets de sensation */}
-      <View style={styles.grid}>
-        {FEELINGS.map((f) => {
-          const isSelected = feeling === f.id;
+        {MEALS.map((m) => {
+          const isActive = meal === m.id;
           return (
             <TouchableOpacity
-              key={f.id}
-              onPress={() => selectFeeling(f)}
-              style={[
-                styles.pebble,
-                isSelected && {
-                  borderColor: f.color,
-                  backgroundColor: "#FFFFFF",
-                  borderWidth: 2,
-                },
-              ]}
+              key={m.id}
+              onPress={() => setMeal(m.id)}
+              style={[styles.ribbonTab, isActive && styles.ribbonActive]}
+              activeOpacity={0.7}
             >
-              <Text style={{ fontSize: 28 }}>{f.emoji}</Text>
-              <Text
-                style={[
-                  styles.pebbleLabel,
-                  isSelected && { color: f.color, fontWeight: "700" },
-                ]}
-              >
-                {f.label}
+              <Text style={[styles.ribbonText, isActive && styles.boldText]}>
+                {m.label}
               </Text>
             </TouchableOpacity>
           );
         })}
       </View>
 
-      {/* 3. Note bienveillante épurée */}
+      {/* 2. Galets de sensation réutilisant JournalCard */}
+      <View style={styles.grid}>
+        {FEELINGS.map((f) => (
+          <View key={f.id} style={styles.feelingCol}>
+            <JournalCard
+              label={f.label}
+              isSelected={feeling === f.id}
+              activeColor={f.color}
+              onPress={() => selectFeeling(f)}
+              aspectSquare
+            />
+          </View>
+        ))}
+      </View>
+
+      {/* 3. Note d'écoute bienveillante */}
       <Card
         style={[
           styles.noteCard,
@@ -101,17 +106,35 @@ export default function JournalScreen() {
         </Text>
       </Card>
 
-      {/* 4. Frise du jour épurée */}
+      {/* 4. Frise du jour épurée sans émojis */}
       <Card style={styles.timelineCard}>
         <View style={styles.timelineRow}>
-          {MEALS.map((m) => (
-            <View key={m.id} style={styles.timelineItem}>
-              <View style={[styles.badge, log[m.id] && styles.badgeActive]}>
-                <Text style={{ fontSize: 16 }}>{log[m.id] || "·"}</Text>
+          {MEALS.map((m) => {
+            const loggedFeelingId = log[m.id];
+            const color = getFeelingColor(loggedFeelingId);
+
+            return (
+              <View key={m.id} style={styles.timelineItem}>
+                <View
+                  style={[
+                    styles.badge,
+                    loggedFeelingId && styles.badgeActive,
+                    color ? { borderColor: color } : null,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.badgeText,
+                      color ? { color, fontWeight: "700" } : null,
+                    ]}
+                  >
+                    {loggedFeelingId ? "✓" : "·"}
+                  </Text>
+                </View>
+                <Text style={styles.timelineLabel}>{m.label}</Text>
               </View>
-              <Text style={styles.timelineLabel}>{m.label}</Text>
-            </View>
-          ))}
+            );
+          })}
         </View>
       </Card>
 
@@ -128,22 +151,27 @@ const styles = StyleSheet.create({
     padding: 4,
     borderRadius: 16,
     marginVertical: 16,
+    gap: 4,
   },
   ribbonTab: {
     flex: 1,
-    flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: 8,
+    paddingVertical: 10,
     borderRadius: 12,
-    gap: 4,
   },
   ribbonActive: {
     backgroundColor: "#FFFFFF",
+    shadowColor: "#C46851",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
   },
   ribbonText: {
-    fontSize: 12,
+    fontSize: 12.5,
     color: "#8C7A6B",
+    fontWeight: "600",
   },
   boldText: {
     color: "#38231E",
@@ -154,30 +182,17 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 16,
   },
-  pebble: {
+  feelingCol: {
     flex: 1,
-    aspectRatio: 0.9,
-    backgroundColor: "#FAF6F0",
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1.5,
-    borderColor: "#EFE8DC",
-  },
-  pebbleLabel: {
-    fontSize: 11.5,
-    fontWeight: "600",
-    color: "#5C3636",
-    marginTop: 4,
   },
   noteCard: {
     padding: 14,
     marginBottom: 16,
   },
   noteText: {
-    fontSize: 12.5,
+    fontSize: 13,
     color: "#5C4638",
-    lineHeight: 18,
+    lineHeight: 19,
   },
   timelineCard: {
     padding: 14,
@@ -192,18 +207,23 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   badge: {
-    width: 34,
-    height: 34,
+    width: 32,
+    height: 32,
     borderRadius: 12,
     backgroundColor: "#F7F2EC",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 4,
+    borderWidth: 1.5,
+    borderColor: "transparent",
   },
   badgeActive: {
     backgroundColor: "#FFFFFF",
-    borderWidth: 1.5,
-    borderColor: "#C46851",
+  },
+  badgeText: {
+    fontSize: 13,
+    color: "#A89A8F",
+    fontWeight: "600",
   },
   timelineLabel: {
     fontSize: 11,

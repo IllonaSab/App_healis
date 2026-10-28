@@ -1,43 +1,6 @@
-import { Ionicons } from "@expo/vector-icons";
-import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet } from "react-native";
 
-interface StepItemProps {
-  stepNumber: number;
-  label: string;
-  detail?: string;
-  isCompleted?: boolean;
-}
-
-export function StepItem({
-  stepNumber,
-  label,
-  detail,
-  isCompleted = false,
-}: StepItemProps) {
-  return (
-    <View style={[styles.container, isCompleted && styles.containerCompleted]}>
-      {/* Badge indicateur d'étape */}
-      <View style={[styles.badge, isCompleted && styles.badgeCompleted]}>
-        {isCompleted ? (
-          <Ionicons name="checkmark" size={14} color="#FFFFFF" />
-        ) : (
-          <Text style={styles.badgeText}>{stepNumber}</Text>
-        )}
-      </View>
-
-      {/* Contenu textuel */}
-      <View style={styles.textContainer}>
-        <Text style={[styles.label, isCompleted && styles.labelCompleted]}>
-          {label}
-        </Text>
-        {detail ? <Text style={styles.detail}>{detail}</Text> : null}
-      </View>
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
+export const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
@@ -73,6 +36,11 @@ const styles = StyleSheet.create({
   badgeText: {
     color: "#FFFFFF",
     fontSize: 12.5,
+    fontWeight: "700",
+  },
+  checkmarkText: {
+    color: "#FFFFFF",
+    fontSize: 13,
     fontWeight: "700",
   },
   textContainer: {

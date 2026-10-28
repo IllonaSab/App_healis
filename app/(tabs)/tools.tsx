@@ -1,17 +1,17 @@
-import { Card } from "@/components/ui/Card";
-import { ScreenContainer } from "@/components/ui/ScreenContainer";
-import { SectionHeader } from "@/components/ui/SectionHeader";
 import * as Haptics from "expo-haptics";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
-  Animated,
-  Easing,
   Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { BreathingCircle } from "../../components/ui/BreathingCircle/BreathingCircle";
+import { Card } from "../../components/ui/Card/Card";
+import { ScreenContainer } from "../../components/ui/ScreenContainer/ScreenContainer";
+import { SectionHeader } from "../../components/ui/SectionHeader/SectionHeader";
+import { StepItem } from "../../components/ui/StepItem/StepItem";
 
 interface ToolTab {
   id: "breath" | "grounding" | "relax";
@@ -24,61 +24,21 @@ const TOOLS: ToolTab[] = [
   { id: "relax", title: "Relâchement" },
 ];
 
+const GROUNDING_STEPS = [
+  { step: 3, label: "Vue", detail: "Remarquez 3 éléments visibles autour de vous." },
+  { step: 2, label: "Ouïe", detail: "Identifiez 2 sons ambiants ou discrets." },
+  { step: 1, label: "Toucher", detail: "Ressentez le contact physique de vos pieds sur le sol." },
+];
+
+const RELAX_STEPS = [
+  { step: 1, label: "Mâchoire", detail: "Desserrer les dents et laisser reposer la langue au palais." },
+  { step: 2, label: "Épaules", detail: "Abaisser les épaules loin des oreilles sur une expiration lente." },
+  { step: 3, label: "Ventre", detail: "Détendre le ventre en le laissant respirer à son rythme naturel." },
+];
+
 export default function ToolsScreen() {
   const [activeTab, setActiveTab] = useState<ToolTab["id"]>("breath");
   const [isBreathing, setIsBreathing] = useState(false);
-  const [phase, setPhase] = useState("Touchez le cercle pour débuter");
-  const [scaleAnim] = useState(new Animated.Value(1));
-
-  useEffect(() => {
-    if (isBreathing) {
-      const runCycle = () => {
-        setPhase("Inspirez doucement...");
-        if (Platform.OS !== "web") {
-          try {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          } catch {}
-        }
-
-        Animated.timing(scaleAnim, {
-          toValue: 1.35,
-          duration: 4000,
-          easing: Easing.bezier(0.4, 0, 0.2, 1),
-          useNativeDriver: true,
-        }).start(({ finished }) => {
-          if (!finished) return;
-
-          setPhase("Expirez longuement...");
-          if (Platform.OS !== "web") {
-            try {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            } catch {}
-          }
-
-          Animated.timing(scaleAnim, {
-            toValue: 1,
-            duration: 6000,
-            easing: Easing.bezier(0.4, 0, 0.2, 1),
-            useNativeDriver: true,
-          }).start(({ finished: f2 }) => {
-            if (f2) runCycle();
-          });
-        });
-      };
-
-      runCycle();
-    } else {
-      scaleAnim.stopAnimation();
-      Animated.timing(scaleAnim, {
-        toValue: 1,
-        duration: 400,
-        useNativeDriver: true,
-      }).start();
-      setPhase("Touchez le cercle pour débuter");
-    }
-
-    return () => scaleAnim.stopAnimation();
-  }, [isBreathing]);
 
   const toggleBreathing = () => {
     if (Platform.OS !== "web") {
@@ -89,31 +49,34 @@ export default function ToolsScreen() {
     setIsBreathing((prev) => !prev);
   };
 
+  const handleTabChange = (id: ToolTab["id"]) => {
+    if (Platform.OS !== "web") {
+      try {
+        Haptics.selectionAsync();
+      } catch {}
+    }
+    setIsBreathing(false);
+    setActiveTab(id);
+  };
+
   return (
     <ScreenContainer scrollable>
       <SectionHeader
         surtitle="Reconnexion avec son corps"
-        title="Trois gestes simple"
-        description="Ces outils sont là pour vous accueillir, à votre rythme et sans jugement.  "
-        />
+        title="Trois gestes simples"
+        description="Ces outils sont là pour vous accueillir, à votre rythme et sans jugement."
+      />
 
-      {/* Ruban textuel épuré */}
+      {/* Ruban textuel de navigation */}
       <View style={styles.ribbon}>
         {TOOLS.map((t) => {
           const active = activeTab === t.id;
           return (
             <TouchableOpacity
               key={t.id}
-              onPress={() => {
-                if (Platform.OS !== "web") {
-                  try {
-                    Haptics.selectionAsync();
-                  } catch {}
-                }
-                setIsBreathing(false);
-                setActiveTab(t.id);
-              }}
+              onPress={() => handleTabChange(t.id)}
               style={[styles.tab, active && styles.tabActive]}
+              activeOpacity={0.7}
             >
               <Text style={[styles.tabText, active && styles.tabTextActive]}>
                 {t.title}
@@ -123,34 +86,29 @@ export default function ToolsScreen() {
         })}
       </View>
 
-      {/* 1. Respiration */}
+      {/* 1. Respiration avec BreathingCircle */}
       {activeTab === "breath" && (
         <Card style={styles.contentCard}>
           <Text style={styles.cardDesc}>
             Rythme apaisant (4s inspire - 6s expire) pour réguler le système nerveux.
           </Text>
 
-          <View style={styles.pebbleZone}>
-            <Animated.View
-              style={[styles.pebble, { transform: [{ scale: scaleAnim }] }]}
-            >
-              <TouchableOpacity
-                onPress={toggleBreathing}
-                activeOpacity={0.85}
-                style={styles.pebbleTouch}
-              >
-                <Text style={styles.pebbleText}>
-                  {isBreathing ? "Pause" : "Départ"}
-                </Text>
-              </TouchableOpacity>
-            </Animated.View>
-          </View>
-
-          <Text style={styles.phaseText}>{phase}</Text>
+          <TouchableOpacity onPress={toggleBreathing} activeOpacity={0.9}>
+            <BreathingCircle
+              isActive={isBreathing}
+              instruction={
+                isBreathing
+                  ? "Suivez le flux du cercle"
+                  : "Touchez pour démarrer"
+              }
+              inhaleDuration={4000}
+              exhaleDuration={6000}
+            />
+          </TouchableOpacity>
         </Card>
       )}
 
-      {/* 2. Ancrage */}
+      {/* 2. Ancrage avec StepItem */}
       {activeTab === "grounding" && (
         <Card style={styles.contentCard}>
           <Text style={styles.sectionSubtitle}>La technique 3-2-1</Text>
@@ -158,36 +116,32 @@ export default function ToolsScreen() {
             Revenez dans l'instant présent pour couper le flux mental :
           </Text>
 
-          {[
-            { n: "3", t: "Remarquez 3 éléments visibles autour de vous." },
-            { n: "2", t: "Identifiez 2 sons ambiants ou discrets." },
-            { n: "1", t: "Ressentez le contact physique de vos pieds sur le sol." },
-          ].map((step) => (
-            <View key={step.n} style={styles.stepRow}>
-              <Text style={styles.stepBadge}>{step.n}</Text>
-              <Text style={styles.stepText}>{step.t}</Text>
-            </View>
+          {GROUNDING_STEPS.map((item) => (
+            <StepItem
+              key={item.step}
+              stepNumber={item.step}
+              label={item.label}
+              detail={item.detail}
+            />
           ))}
         </Card>
       )}
 
-      {/* 3. Relâchement (même structure et style que l'ancrage) */}
+      {/* 3. Relâchement avec StepItem */}
       {activeTab === "relax" && (
         <Card style={styles.contentCard}>
           <Text style={styles.sectionSubtitle}>Scan doux des tensions</Text>
           <Text style={styles.cardDesc}>
-            Parcourez trois points clés sans chercher à forcer la détente :
+            Parcourez trois points clés sans forcer la détente :
           </Text>
 
-          {[
-            { n: "1", t: "Desserrer la mâchoire et laisser la langue reposer au fond du palais." },
-            { n: "2", t: "Abaisser les épaules loin des oreilles sur une expiration lente." },
-            { n: "3", t: "Détendre le ventre en le laissant respirer à son rythme naturel." },
-          ].map((step) => (
-            <View key={step.n} style={styles.stepRow}>
-              <Text style={styles.stepBadge}>{step.n}</Text>
-              <Text style={styles.stepText}>{step.t}</Text>
-            </View>
+          {RELAX_STEPS.map((item) => (
+            <StepItem
+              key={item.step}
+              stepNumber={item.step}
+              label={item.label}
+              detail={item.detail}
+            />
           ))}
         </Card>
       )}
@@ -228,7 +182,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   contentCard: {
-    marginBottom: 16,
+    marginBottom: 24,
   },
   sectionSubtitle: {
     fontSize: 15,
@@ -241,107 +195,5 @@ const styles = StyleSheet.create({
     color: "#6B584C",
     lineHeight: 18,
     marginBottom: 16,
-  },
-  pebbleZone: {
-    height: 160,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  pebble: {
-    width: 104,
-    height: 104,
-    borderRadius: 52,
-    backgroundColor: "#FAF6F1",
-    borderWidth: 2,
-    borderColor: "#E3B89B",
-    alignItems: "center",
-    justifyContent: "center",
-    elevation: 3,
-  },
-  pebbleTouch: {
-    width: "100%",
-    height: "100%",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  pebbleText: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#C46851",
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
-  },
-  phaseText: {
-    textAlign: "center",
-    fontSize: 13.5,
-    fontWeight: "600",
-    color: "#5C3636",
-    marginTop: 14,
-  },
-  stepRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FDFBF9",
-    padding: 12,
-    borderRadius: 14,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: "#EDE5DB",
-    gap: 12,
-  },
-  stepBadge: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: "#EEDBCE",
-    textAlign: "center",
-    lineHeight: 26,
-    fontWeight: "700",
-    color: "#C46851",
-    fontSize: 12,
-  },
-  stepText: {
-    flex: 1,
-    fontSize: 12.5,
-    color: "#5C4638",
-    lineHeight: 17,
-  },
-  relaxRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 12,
-    marginBottom: 14,
-  },
-  relaxBadge: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#C46851",
-    backgroundColor: "#FAF6F1",
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: 6,
-    marginTop: 2,
-  },
-  relaxTitle: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#38231E",
-    marginBottom: 2,
-  },
-  relaxDesc: {
-    fontSize: 11.5,
-    color: "#8C7A6B",
-    lineHeight: 16,
-  },
-  footerCard: {
-    alignItems: "center",
-    marginBottom: 24,
-  },
-  footerText: {
-    fontSize: 11.5,
-    color: "#8C7A6B",
-    fontStyle: "italic",
-    textAlign: "center",
-    lineHeight: 16,
   },
 });

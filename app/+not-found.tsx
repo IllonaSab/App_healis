@@ -1,40 +1,40 @@
-import { Link, Stack } from 'expo-router';
-import { StyleSheet } from 'react-native';
-
-import { Text, View } from '../components/Themed';
+import { useRouter } from "expo-router";
+import React from "react";
+import { StyleSheet, View } from "react-native";
+import { Button } from "../components/ui/Button/Button";
+import { ScreenContainer } from "../components/ui/ScreenContainer/ScreenContainer";
+import { SectionHeader } from "../components/ui/SectionHeader/SectionHeader";
 
 export default function NotFoundScreen() {
-  return (
-    <>
-      <Stack.Screen options={{ title: 'Oops!' }} />
-      <View style={styles.container}>
-        <Text style={styles.title}>This screen doesn't exist.</Text>
+  const router = useRouter();
 
-        <Link href="/" style={styles.link}>
-          <Text style={styles.linkText}>Go to home screen!</Text>
-        </Link>
+  return (
+    <ScreenContainer>
+      <View style={styles.content}>
+        <SectionHeader
+          surtitle="Page introuvable"
+          title="Ce chemin n'existe pas"
+          description="L'écran demandé est inaccessible ou a été déplacé."
+        />
+
+        <Button
+          title="Retourner à l'accueil"
+          variant="primary"
+          onPress={() => router.replace("/(tabs)")}
+          style={styles.button}
+        />
       </View>
-    </>
+    </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  content: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 20,
+    justifyContent: "center",
+    paddingBottom: 40,
   },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  link: {
-    marginTop: 15,
-    paddingVertical: 15,
-  },
-  linkText: {
-    fontSize: 14,
-    color: '#2e78b7',
+  button: {
+    marginTop: 24,
   },
 });
