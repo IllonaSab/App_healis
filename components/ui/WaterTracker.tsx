@@ -1,3 +1,4 @@
+import { Card } from "@/components/ui/Card";
 import * as Haptics from "expo-haptics";
 import React from "react";
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -23,11 +24,11 @@ export function WaterTracker({
   };
 
   return (
-    <View style={styles.card}>
+    <Card style={styles.card}>
       <View style={styles.header}>
-        <Text style={styles.title}>Hydratation</Text>
-        <Text style={styles.count}>{glasses} / {maxGlasses} verres (~1 L)</Text>
-    </View>
+        <Text style={styles.title}>Hydratation douce</Text>
+        <Text style={styles.count}>{glasses} / {maxGlasses} verres</Text>
+      </View>
 
       <View style={styles.row}>
         {Array.from({ length: maxGlasses }, (_, i) => i + 1).map((num) => {
@@ -44,18 +45,13 @@ export function WaterTracker({
           );
         })}
       </View>
-    </View>
+    </Card>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    padding: 16,
     marginBottom: 20,
-    borderWidth: 1,
-    borderColor: "#EFE8DC",
   },
   header: {
     flexDirection: "row",
@@ -85,7 +81,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: "#EDE5DB",
   },
   pillFilled: {
