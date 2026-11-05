@@ -1,63 +1,99 @@
-import { StyleSheet } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#C46851",
+  },
   keyboardContainer: {
     flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: "center",
-    paddingBottom: 24,
   },
   header: {
-    width: "100%",
+    paddingTop: Platform.OS === "ios" ? 64 : 40,
+    paddingBottom: 36,
+    paddingHorizontal: 28,
     alignItems: "center",
+  },
+  logoBadge: {
+    width: 72,
+    height: 72,
+    borderRadius: 24,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
     justifyContent: "center",
-    paddingTop: 16,
-    paddingBottom: 16,
+    alignItems: "center",
+    marginBottom: 14,
   },
   logoImage: {
-    width: 180,
-    height: 90,
-    alignSelf: "center",
+    width: 80,
+    height: 80,
   },
-  subtitle: {
-    textAlign: "center",
-    color: "#8C7A6B",
+  appName: {
+    fontSize: 28,
+    fontWeight: "700",
+    color: "#FFFFFF",
+    letterSpacing: -0.5,
+  },
+  appSubtitle: {
     fontSize: 13,
-    marginTop: 8,
+    color: "rgba(255, 255, 255, 0.85)",
+    marginTop: 4,
+    letterSpacing: 0.2,
+  },
+  formContainer: {
+    flex: 1,
+    backgroundColor: "#FAF7F2",
+    borderTopLeftRadius: 36,
+    borderTopRightRadius: 36,
+    paddingHorizontal: 28,
+    paddingTop: 32,
+    paddingBottom: 40,
+  },
+  formTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#38231E",
+    letterSpacing: -0.3,
+  },
+  formSubtitle: {
+    fontSize: 13,
+    color: "#8C7A6B",
+    marginTop: 4,
+    marginBottom: 24,
   },
   errorBanner: {
-    backgroundColor: "#FEF2F2",
-    borderColor: "#FECACA",
+    backgroundColor: "#FDF2F0",
+    borderColor: "#F7D4CF",
     borderWidth: 1,
     padding: 12,
-    borderRadius: 12,
+    borderRadius: 14,
     marginBottom: 16,
   },
   errorText: {
-    color: "#DC2626",
-    textAlign: "center",
+    color: "#C44335",
     fontSize: 12,
     fontWeight: "600",
+    textAlign: "center",
   },
   inputSpacing: {
     marginBottom: 14,
   },
   submitButton: {
     marginTop: 8,
-    marginBottom: 12,
+    marginBottom: 20,
   },
-  loginLinkButton: {
-    paddingVertical: 10,
+  switchAuthButton: {
     alignItems: "center",
+    paddingVertical: 8,
   },
-  loginLinkText: {
-    fontSize: 12,
+  switchAuthText: {
+    fontSize: 13,
     color: "#8C7A6B",
   },
-  loginLinkHighlight: {
-    color: "#C46851",
+  switchAuthHighlight: {
     fontWeight: "700",
+    color: "#C46851",
   },
 });

@@ -1,6 +1,11 @@
 import React, { useState } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { JournalCard } from "../../components/ui//JournalCard/JournalCard";
+import {
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { Card } from "../../components/ui/Card/Card";
 import { ScreenContainer } from "../../components/ui/ScreenContainer/ScreenContainer";
 import { SectionHeader } from "../../components/ui/SectionHeader/SectionHeader";
@@ -9,7 +14,7 @@ import { WaterTracker } from "../../components/ui/WaterTracker/WaterTracker";
 interface Meal {
   id: string;
   label: string;
-  shortLabel: string;
+  image: any;
 }
 
 interface Feeling {
@@ -17,25 +22,66 @@ interface Feeling {
   label: string;
   color: string;
   note: string;
+  image: any;
 }
 
 const MEALS: Meal[] = [
-  { id: "matin", label: "Matin", shortLabel: "M" },
-  { id: "midi", label: "Midi", shortLabel: "M" },
-  { id: "pause", label: "Pause", shortLabel: "P" },
-  { id: "soir", label: "Soir", shortLabel: "S" },
+  {
+    id: "matin",
+    label: "Matin",
+    image: require("../../assets/images/matin.png"),
+  },
+  {
+    id: "midi",
+    label: "Midi",
+    image: require("../../assets/images/midi.png"),
+  },
+  {
+    id: "pause",
+    label: "Pause",
+    image: require("../../assets/images/pause.png"),
+  },
+  {
+    id: "soir",
+    label: "Soir",
+    image: require("../../assets/images/soir.png"),
+  },
 ];
 
 const FEELINGS: Feeling[] = [
-  { id: "serein", label: "Serein", color: "#6A8D73", note: "Savourez cette légèreté." },
-  { id: "bien", label: "Bien", color: "#8C7A6B", note: "Continuez à votre rythme." },
-  { id: "lourd", label: "Lourd", color: "#D98E73", note: "Respirez lentement, le corps digère." },
-  { id: "tendu", label: "Tendu", color: "#C46851", note: "Relâchez vos épaules, tout va bien." },
+  {
+    id: "serein",
+    label: "Serein",
+    color: "#6A8D73",
+    note: "Savourez cette légèreté.",
+    image: require("../../assets/images/serein.png"),
+  },
+  {
+    id: "bien",
+    label: "Bien",
+    color: "#8C7A6B",
+    note: "Continuez à votre rythme.",
+    image: require("../../assets/images/bien.png"),
+  },
+  {
+    id: "lourd",
+    label: "Lourd",
+    color: "#D98E73",
+    note: "Respirez lentement, le corps digère.",
+    image: require("../../assets/images/lourd.png"),
+  },
+  {
+    id: "tendu",
+    label: "Tendu",
+    color: "#C46851",
+    note: "Relâchez vos épaules, tout va bien.",
+    image: require("../../assets/images/tendu.png"),
+  },
 ];
 
 export default function JournalScreen() {
   const [meal, setMeal] = useState<string>("midi");
-  const [feeling, setFeeling] = useState<string | null>(null);
+  const [feeling, setFeeling] = useState<string | null>("bien");
   const [log, setLog] = useState<Record<string, string>>({ matin: "serein" });
   const [water, setWater] = useState<number>(2);
 
@@ -57,7 +103,7 @@ export default function JournalScreen() {
         title="Comment va votre corps ?"
       />
 
-      {/* 1. Ruban des repas (100 % typographique) */}
+      {/* 1. Ruban illustré des repas */}
       <View style={styles.ribbon}>
         {MEALS.map((m) => {
           const isActive = meal === m.id;
@@ -68,6 +114,13 @@ export default function JournalScreen() {
               style={[styles.ribbonTab, isActive && styles.ribbonActive]}
               activeOpacity={0.7}
             >
+              <View style={styles.mealImageContainer}>
+                <Image
+                  source={m.image}
+                  style={styles.mealImage}
+                  resizeMode="contain"
+                />
+              </View>
               <Text style={[styles.ribbonText, isActive && styles.boldText]}>
                 {m.label}
               </Text>
@@ -76,19 +129,42 @@ export default function JournalScreen() {
         })}
       </View>
 
-      {/* 2. Galets de sensation réutilisant JournalCard */}
+      {/* 2. Galets de sensation illustrés */}
       <View style={styles.grid}>
-        {FEELINGS.map((f) => (
-          <View key={f.id} style={styles.feelingCol}>
-            <JournalCard
-              label={f.label}
-              isSelected={feeling === f.id}
-              activeColor={f.color}
-              onPress={() => selectFeeling(f)}
-              aspectSquare
-            />
-          </View>
-        ))}
+        {FEELINGS.map((f) => {
+          const isSelected = feeling === f.id;
+          return (
+            <View key={f.id} style={styles.feelingCol}>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => selectFeeling(f)}
+                style={[
+                  styles.feelingCard,
+                  isSelected && {
+                    borderColor: f.color,
+                    backgroundColor: `${f.color}15`,
+                  },
+                ]}
+              >
+                <View style={styles.feelingImageWrapper}>
+                  <Image
+                    source={f.image}
+                    style={styles.feelingImage}
+                    resizeMode="contain"
+                  />
+                </View>
+                <Text
+                  style={[
+                    styles.feelingLabel,
+                    isSelected && { color: f.color, fontWeight: "700" },
+                  ]}
+                >
+                  {f.label}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          );
+        })}
       </View>
 
       {/* 3. Note d'écoute bienveillante */}
@@ -102,11 +178,13 @@ export default function JournalScreen() {
         ]}
       >
         <Text style={styles.noteText}>
-          {activeObj ? activeObj.note : "Touchez un ressenti pour écouter votre sensation."}
+          {activeObj
+            ? activeObj.note
+            : "Touchez un ressenti pour écouter votre sensation."}
         </Text>
       </Card>
 
-      {/* 4. Frise du jour épurée sans émojis */}
+      {/* 4. Frise du jour épurée */}
       <Card style={styles.timelineCard}>
         <View style={styles.timelineRow}>
           {MEALS.map((m) => {
@@ -148,33 +226,45 @@ const styles = StyleSheet.create({
   ribbon: {
     flexDirection: "row",
     backgroundColor: "#F2ECE4",
-    padding: 4,
-    borderRadius: 16,
+    padding: 6,
+    borderRadius: 20,
     marginVertical: 16,
-    gap: 4,
+    gap: 6,
   },
   ribbonTab: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     paddingVertical: 10,
-    borderRadius: 12,
+    paddingHorizontal: 4,
+    borderRadius: 14,
   },
   ribbonActive: {
     backgroundColor: "#FFFFFF",
     shadowColor: "#C46851",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  mealImageContainer: {
+    width: 32,
+    height: 32,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 4,
+  },
+  mealImage: {
+    width: "100%",
+    height: "100%",
   },
   ribbonText: {
-    fontSize: 12.5,
+    fontSize: 12,
     color: "#8C7A6B",
     fontWeight: "600",
   },
   boldText: {
-    color: "#38231E",
+    color: "#C46851",
     fontWeight: "700",
   },
   grid: {
@@ -184,6 +274,34 @@ const styles = StyleSheet.create({
   },
   feelingCol: {
     flex: 1,
+  },
+  feelingCard: {
+    aspectRatio: 0.85,
+    backgroundColor: "#FDFCFA",
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: "#EFE8E1",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 4,
+  },
+  feelingImageWrapper: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 8,
+  },
+  feelingImage: {
+    width: "100%",
+    height: "100%",
+  },
+  feelingLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#5C3636",
+    textAlign: "center",
   },
   noteCard: {
     padding: 14,

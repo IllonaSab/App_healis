@@ -1,22 +1,25 @@
+import { Button } from "@/components/ui/Button/Button";
+import { Card } from "@/components/ui/Card/Card";
+import { ScreenContainer } from "@/components/ui/ScreenContainer/ScreenContainer";
+import { SectionHeader } from "@/components/ui/SectionHeader/SectionHeader";
+import { SettingRow } from "@/components/ui/SettingRow/SettingRow";
+import { supabase } from "@/lib/supabase";
 import * as Haptics from "expo-haptics";
+import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-  Alert,
-  Platform,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Alert,
+    Platform,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
-import { Button } from "../../components/ui/Button/Button";
-import { Card } from "../../components/ui/Card/Card";
-import { ScreenContainer } from "../../components/ui/ScreenContainer/ScreenContainer";
-import { SectionHeader } from "../../components/ui/SectionHeader/SectionHeader";
-import { SettingRow } from "../../components/ui/SettingRow/SettingRow";
 
 const WEATHER_STATES = ["Sereine", "En chemin", "Brouillard", "Apaisée"];
 
 export default function ProfileScreen() {
+  const router = useRouter();
   const [weatherIdx, setWeatherIdx] = useState(0);
 
   const cycleWeather = () => {
@@ -28,15 +31,51 @@ export default function ProfileScreen() {
     setWeatherIdx((prev) => (prev + 1) % WEATHER_STATES.length);
   };
 
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      router.replace("/(auth)/login");
+    } catch (err: any) {
+      Alert.alert("Erreur", err.message || "Impossible de fermer la session.");
+    }
+  };
+
   const confirmLogout = () => {
     Alert.alert(
       "Déconnexion",
       "Souhaitez-vous fermer votre session sur cet appareil ?",
       [
         { text: "Annuler", style: "cancel" },
-        { text: "Se déconnecter", style: "destructive", onPress: () => {} },
+        {
+          text: "Se déconnecter",
+          style: "destructive",
+          onPress: handleLogout,
+        },
       ]
     );
+  };
+
+  const handleDeleteAccount = async () => {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        throw new Error("Session introuvable.");
+      }
+
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+
+      router.replace("/(auth)/login");
+    } catch (err: any) {
+      Alert.alert(
+        "Erreur",
+        err.message || "Impossible de procéder à la suppression du compte."
+      );
+    }
   };
 
   const confirmDelete = () => {
@@ -45,7 +84,11 @@ export default function ProfileScreen() {
       "Cette action supprimera définitivement votre compte et tout votre historique thérapeutique.",
       [
         { text: "Conserver mon compte", style: "cancel" },
-        { text: "Supprimer définitivement", style: "destructive", onPress: () => {} },
+        {
+          text: "Supprimer définitivement",
+          style: "destructive",
+          onPress: handleDeleteAccount,
+        },
       ]
     );
   };
@@ -64,7 +107,7 @@ export default function ProfileScreen() {
           <View style={styles.natureBadge}>
             <Text style={styles.natureInitial}>C</Text>
           </View>
-          <View style={{ flex: 1 }}>
+          <View style={styles.userInfoCol}>
             <Text style={styles.userName}>Camille Durand</Text>
             <TouchableOpacity
               onPress={cycleWeather}
@@ -72,7 +115,9 @@ export default function ProfileScreen() {
               style={styles.weatherButton}
             >
               <Text style={styles.weatherTag}>Météo d'ancrage</Text>
-              <Text style={styles.weatherValue}>{WEATHER_STATES[weatherIdx]} ▾</Text>
+              <Text style={styles.weatherValue}>
+                {WEATHER_STATES[weatherIdx]} ▾
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -129,7 +174,7 @@ export default function ProfileScreen() {
       </Card>
 
       {/* 3. DÉCONNEXION & SUPPRESSION */}
-      <Card style={[styles.card, { marginBottom: 32 }]}>
+      <Card style={[styles.card, styles.lastCard]}>
         <Text style={styles.cardTitle}>Gestion de session</Text>
         <Text style={styles.cardDesc}>
           Contrôlez vos accès ou supprimez définitivement vos données.
@@ -157,6 +202,9 @@ const styles = StyleSheet.create({
   card: {
     marginBottom: 16,
   },
+  lastCard: {
+    marginBottom: 32,
+  },
   userRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -176,6 +224,9 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "700",
     color: "#C46851",
+  },
+  userInfoCol: {
+    flex: 1,
   },
   userName: {
     fontSize: 17,

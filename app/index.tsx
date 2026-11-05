@@ -5,36 +5,36 @@ import { ActivityIndicator, StyleSheet, View } from "react-native";
 
 export default function Index() {
   const [loading, setLoading] = useState(true);
-  const [hasSession, setHasSession] = useState(false);
+  const [hasSession, setHasSession] = useState<boolean | null>(null);
 
   useEffect(() => {
-    let mounted = true;
+    let isMounted = true;
 
-    // 1. Récupération de la session initiale
+    // 1. Vérification de la session stockée au démarrage
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (mounted) {
+      if (isMounted) {
         setHasSession(!!session);
         setLoading(false);
       }
     });
 
-    // 2. Écoute des mutations d'authentification
+    // 2. Écoute dynamique : réagit instantanément aux logins, logouts et suppressions
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (mounted) {
+      if (isMounted) {
         setHasSession(!!session);
         setLoading(false);
       }
     });
 
     return () => {
-      mounted = false;
+      isMounted = false;
       subscription.unsubscribe();
     };
   }, []);
 
-  if (loading) {
+  if (loading || hasSession === null) {
     return (
       <View style={styles.container}>
         <ActivityIndicator size="large" color="#C46851" />
@@ -42,11 +42,12 @@ export default function Index() {
     );
   }
 
-  if (hasSession) {
-    return <Redirect href="/(tabs)" />;
-  }
-
-  return <Redirect href="/(auth)/login" />;
+  // Si connecté -> Accueil (tabs), sinon -> Login
+  return hasSession ? (
+    <Redirect href="/(tabs)" />
+  ) : (
+    <Redirect href="/(auth)/login" />
+  );
 }
 
 const styles = StyleSheet.create({

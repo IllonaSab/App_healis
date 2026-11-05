@@ -7,14 +7,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  StatusBar,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
 import { Button } from "../../../components/ui/Button/Button";
-import { Card } from "../../../components/ui/Card/Card";
 import { Input } from "../../../components/ui/Input/Input";
-import { ScreenContainer } from "../../../components/ui/ScreenContainer/ScreenContainer";
 import { styles } from "./register.styles";
 
 export default function RegisterScreen() {
@@ -58,7 +57,7 @@ export default function RegisterScreen() {
       if (data.user && !data.session) {
         Alert.alert(
           "Vérification requise",
-          "Un lien de confirmation vient de t'être envoyé par email.",
+          "Un lien de confirmation vient de vous être envoyé par email.",
           [{ text: "Compris", onPress: () => router.replace("/(auth)/login") }]
         );
       } else {
@@ -72,28 +71,41 @@ export default function RegisterScreen() {
   };
 
   return (
-    <ScreenContainer>
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" />
+
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardContainer}
       >
         <ScrollView
           contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
+          bounces={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* En-tête Logo + Titre */}
+          {/* En-tête immersif */}
           <View style={styles.header}>
-            <Image
-              source={require("../../assets/images/logo.png")}
-              style={styles.logoImage}
-              resizeMode="contain"
-            />
-            <Text style={styles.subtitle}>Inscription</Text>
+            <View style={styles.logoBadge}>
+              <Image
+                source={require("../../../assets/images/logo.png")}
+                style={styles.logoImage}
+                resizeMode="contain"
+              />
+            </View>
+
+            <Text style={styles.appName}>Healis</Text>
+            <Text style={styles.appSubtitle}>
+              Créer votre espace de soin et de bien-être
+            </Text>
           </View>
 
-          {/* Formulaire dans la Card */}
-          <Card>
+          {/* Feuille de formulaire */}
+          <View style={styles.formContainer}>
+            <Text style={styles.formTitle}>Inscription</Text>
+            <Text style={styles.formSubtitle}>
+              Rejoignez le programme d'accompagnement
+            </Text>
+
             {errorMessage ? (
               <View style={styles.errorBanner}>
                 <Text style={styles.errorText}>{errorMessage}</Text>
@@ -134,7 +146,7 @@ export default function RegisterScreen() {
                 setConfirmPassword(text);
                 if (errorMessage) setErrorMessage(null);
               }}
-              placeholder="Répète ton mot de passe"
+              placeholder="Répétez votre mot de passe"
               containerStyle={styles.inputSpacing}
             />
 
@@ -148,17 +160,17 @@ export default function RegisterScreen() {
 
             <TouchableOpacity
               onPress={() => router.back()}
-              style={styles.loginLinkButton}
+              style={styles.switchAuthButton}
               activeOpacity={0.7}
             >
-              <Text style={styles.loginLinkText}>
-                Déjà inscrite ?{" "}
-                <Text style={styles.loginLinkHighlight}>Se connecter</Text>
+              <Text style={styles.switchAuthText}>
+                Déjà un compte ?{" "}
+                <Text style={styles.switchAuthHighlight}>Se connecter</Text>
               </Text>
             </TouchableOpacity>
-          </Card>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </ScreenContainer>
+    </View>
   );
 }
