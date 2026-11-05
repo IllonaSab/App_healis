@@ -1,5 +1,7 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   Image,
   StyleSheet,
   Text,
@@ -7,9 +9,11 @@ import {
   View,
 } from "react-native";
 import { Card } from "../../components/ui/Card/Card";
+import { JournalCard } from "../../components/ui/JournalCard/JournalCard";
 import { ScreenContainer } from "../../components/ui/ScreenContainer/ScreenContainer";
 import { SectionHeader } from "../../components/ui/SectionHeader/SectionHeader";
 import { WaterTracker } from "../../components/ui/WaterTracker/WaterTracker";
+import { journalService } from "../../services/journalService";
 
 interface Meal {
   id: string;
@@ -26,75 +30,79 @@ interface Feeling {
 }
 
 const MEALS: Meal[] = [
-  {
-    id: "matin",
-    label: "Matin",
-    image: require("../../assets/images/matin.png"),
-  },
-  {
-    id: "midi",
-    label: "Midi",
-    image: require("../../assets/images/midi.png"),
-  },
-  {
-    id: "pause",
-    label: "Pause",
-    image: require("../../assets/images/pause.png"),
-  },
-  {
-    id: "soir",
-    label: "Soir",
-    image: require("../../assets/images/soir.png"),
-  },
+  { id: "matin", label: "Matin", image: require("../../assets/images/matin.png") },
+  { id: "midi", label: "Midi", image: require("../../assets/images/midi.png") },
+  { id: "pause", label: "Pause", image: require("../../assets/images/pause.png") },
+  { id: "soir", label: "Soir", image: require("../../assets/images/soir.png") },
 ];
 
 const FEELINGS: Feeling[] = [
-  {
-    id: "serein",
-    label: "Serein",
-    color: "#6A8D73",
-    note: "Savourez cette légèreté.",
-    image: require("../../assets/images/serein.png"),
-  },
-  {
-    id: "bien",
-    label: "Bien",
-    color: "#8C7A6B",
-    note: "Continuez à votre rythme.",
-    image: require("../../assets/images/bien.png"),
-  },
-  {
-    id: "lourd",
-    label: "Lourd",
-    color: "#D98E73",
-    note: "Respirez lentement, le corps digère.",
-    image: require("../../assets/images/lourd.png"),
-  },
-  {
-    id: "tendu",
-    label: "Tendu",
-    color: "#C46851",
-    note: "Relâchez vos épaules, tout va bien.",
-    image: require("../../assets/images/tendu.png"),
-  },
+  { id: "serein", label: "Serein", color: "#6A8D73", note: "Savourez cette légèreté.", image: require("../../assets/images/serein.png") },
+  { id: "bien", label: "Bien", color: "#8C7A6B", note: "Continuez à votre rythme.", image: require("../../assets/images/bien.png") },
+  { id: "lourd", label: "Lourd", color: "#D98E73", note: "Respirez lentement, le corps digère.", image: require("../../assets/images/lourd.png") },
+  { id: "tendu", label: "Tendu", color: "#C46851", note: "Relâchez vos épaules, tout va bien.", image: require("../../assets/images/tendu.png") },
 ];
 
 export default function JournalScreen() {
   const [meal, setMeal] = useState<string>("midi");
-  const [feeling, setFeeling] = useState<string | null>("bien");
-  const [log, setLog] = useState<Record<string, string>>({ matin: "serein" });
-  const [water, setWater] = useState<number>(2);
+  const [log, setLog] = useState<Record<string, string>>({});
+  const [water, setWater] = useState<number>(0);
+  const [loading, setLoading] = useState<boolean>(true);
 
-  const activeObj = FEELINGS.find((f) => f.id === feeling);
+  const currentFeelingId = log[meal] || null;
+  const activeObj = FEELINGS.find((f) => f.id === currentFeelingId);
 
-  const selectFeeling = (item: Feeling) => {
-    setFeeling(item.id);
-    setLog((prev) => ({ ...prev, [meal]: item.id }));
+  useEffect(() => {
+    async function loadData() {
+      try {
+        setLoading(true);
+        const todayData = await journalService.getTodayLog();
+        if (todayData) {
+          if (todayData.meals) setLog(todayData.meals);
+          if (typeof todayData.water_glasses === "number") setWater(todayData.water_glasses);
+        }
+      } catch (err: any) {
+        console.error("Erreur chargement journal:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, []);
+
+  const selectFeeling = async (item: Feeling) => {
+    const updatedMeals = { ...log, [meal]: item.id };
+    setLog(updatedMeals);
+
+    try {
+      await journalService.saveTodayLog({ meals: updatedMeals });
+    } catch (err: any) {
+      Alert.alert("Erreur", "Impossible de sauvegarder votre sensation.");
+    }
+  };
+
+  const handleWaterChange = async (count: number) => {
+    setWater(count);
+    try {
+      await journalService.saveTodayLog({ water_glasses: count });
+    } catch (err: any) {
+      Alert.alert("Erreur", "Impossible de sauvegarder l'hydratation.");
+    }
   };
 
   const getFeelingColor = (feelingId?: string) => {
     return FEELINGS.find((f) => f.id === feelingId)?.color;
   };
+
+  if (loading) {
+    return (
+      <ScreenContainer>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#C46851" />
+        </View>
+      </ScreenContainer>
+    );
+  }
 
   return (
     <ScreenContainer scrollable>
@@ -129,45 +137,28 @@ export default function JournalScreen() {
         })}
       </View>
 
-      {/* 2. Galets de sensation illustrés */}
+      {/* 2. Galets de sensation réutilisant JournalCard */}
       <View style={styles.grid}>
-        {FEELINGS.map((f) => {
-          const isSelected = feeling === f.id;
-          return (
-            <View key={f.id} style={styles.feelingCol}>
-              <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={() => selectFeeling(f)}
-                style={[
-                  styles.feelingCard,
-                  isSelected && {
-                    borderColor: f.color,
-                    backgroundColor: `${f.color}15`,
-                  },
-                ]}
-              >
-                <View style={styles.feelingImageWrapper}>
-                  <Image
-                    source={f.image}
-                    style={styles.feelingImage}
-                    resizeMode="contain"
-                  />
-                </View>
-                <Text
-                  style={[
-                    styles.feelingLabel,
-                    isSelected && { color: f.color, fontWeight: "700" },
-                  ]}
-                >
-                  {f.label}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          );
-        })}
+        {FEELINGS.map((f) => (
+          <View key={f.id} style={styles.feelingCol}>
+            <JournalCard
+              label={f.label}
+              isSelected={currentFeelingId === f.id}
+              activeColor={f.color}
+              onPress={() => selectFeeling(f)}
+              aspectSquare
+            >
+              <Image
+                source={f.image}
+                style={styles.cardImage}
+                resizeMode="contain"
+              />
+            </JournalCard>
+          </View>
+        ))}
       </View>
 
-      {/* 3. Note d'écoute bienveillante */}
+      {/* 3. Note d'écoute */}
       <Card
         style={[
           styles.noteCard,
@@ -184,7 +175,7 @@ export default function JournalScreen() {
         </Text>
       </Card>
 
-      {/* 4. Frise du jour épurée */}
+      {/* 4. Frise du jour */}
       <Card style={styles.timelineCard}>
         <View style={styles.timelineRow}>
           {MEALS.map((m) => {
@@ -216,13 +207,19 @@ export default function JournalScreen() {
         </View>
       </Card>
 
-      {/* 5. Tracker eau modulaire */}
-      <WaterTracker glasses={water} onChange={setWater} />
+      {/* 5. Tracker eau */}
+      <WaterTracker glasses={water} onChange={handleWaterChange} />
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    minHeight: 300,
+  },
   ribbon: {
     flexDirection: "row",
     backgroundColor: "#F2ECE4",
@@ -275,33 +272,11 @@ const styles = StyleSheet.create({
   feelingCol: {
     flex: 1,
   },
-  feelingCard: {
-    aspectRatio: 0.85,
-    backgroundColor: "#FDFCFA",
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: "#EFE8E1",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 10,
-    paddingHorizontal: 4,
-  },
-  feelingImageWrapper: {
-    width: 44,
-    height: 44,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 8,
-  },
-  feelingImage: {
-    width: "100%",
-    height: "100%",
-  },
-  feelingLabel: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#5C3636",
-    textAlign: "center",
+  cardImage: {
+    width: 40,
+    height: 40,
+    marginBottom: 6,
+    alignSelf: "center",
   },
   noteCard: {
     padding: 14,

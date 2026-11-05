@@ -17,17 +17,8 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 28,
     alignItems: "center",
   },
-  logoBadge: {
-    width: 72,
-    height: 72,
-    borderRadius: 24,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 14,
-  },
   logoImage: {
-    width: 80,
+    width: 150,
     height: 80,
   },
   appName: {
@@ -76,6 +67,12 @@ export const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "600",
     textAlign: "center",
+  },
+  Password: {
+    fontSize: 12,
+    color: "#8C7A6B",
+    marginBottom: 24,
+    paddingHorizontal: 4,
   },
   inputSpacing: {
     marginBottom: 16,

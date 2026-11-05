@@ -12,8 +12,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Button } from "../../../components/ui/Button/Button";
-import { Input } from "../../../components/ui/Input/Input";
+import { Button } from "../../components/ui/Button/Button";
+import { Input } from "../../components/ui/Input/Input";
 import { styles } from "./login.styles";
 
 export default function LoginScreen() {
@@ -48,7 +48,7 @@ export default function LoginScreen() {
         throw error;
       }
 
-      router.replace("/(tabs)");
+      router.replace("/");
     } catch (err: any) {
       setErrorMessage(err.message || "Erreur de connexion.");
     } finally {
@@ -91,37 +91,31 @@ export default function LoginScreen() {
           bounces={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* En-tête immersif */}
           <View style={styles.header}>
-            <View style={styles.logoBadge}>
+            <View>
               <Image
-                source={require("../../../assets/images/logo.png")}
+                source={require("../../assets/images/logo.png")}
                 style={styles.logoImage}
                 resizeMode="contain"
               />
             </View>
-
-            <Text style={styles.appName}>Healis</Text>
             <Text style={styles.appSubtitle}>
               Votre espace de soin et de bien-être
             </Text>
           </View>
 
-          {/* Formulaire */}
           <View style={styles.formContainer}>
             <Text style={styles.formTitle}>Connexion</Text>
             <Text style={styles.formSubtitle}>
               Renseignez vos identifiants pour continuer
             </Text>
 
-            {/* Erreur */}
             {errorMessage ? (
               <View style={styles.errorBanner}>
                 <Text style={styles.errorText}>{errorMessage}</Text>
               </View>
             ) : null}
 
-            {/* Email */}
             <Input
               label="Adresse email"
               value={email}
@@ -147,8 +141,10 @@ export default function LoginScreen() {
               placeholder="••••••••"
               containerStyle={styles.inputSpacing}
             />
+            <Text style={styles.Password}>
+              12 caractères minimum, avec au moins une majuscule, un chiffre et caractères (?./!@).
+            </Text>
 
-            {/* Mot de passe oublié */}
             <TouchableOpacity
               onPress={handleForgotPassword}
               style={styles.forgotPasswordButton}
@@ -159,7 +155,6 @@ export default function LoginScreen() {
               </Text>
             </TouchableOpacity>
 
-            {/* Bouton de validation */}
             <Button
               title="Se connecter"
               variant="primary"
@@ -168,9 +163,8 @@ export default function LoginScreen() {
               style={styles.submitButton}
             />
 
-            {/* Lien Inscription */}
             <TouchableOpacity
-              onPress={() => router.push("/(auth)/register")}
+              onPress={() => router.push("/register")}
               style={styles.switchAuthButton}
               activeOpacity={0.7}
             >

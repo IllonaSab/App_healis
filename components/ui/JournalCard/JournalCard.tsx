@@ -1,11 +1,11 @@
 import * as Haptics from "expo-haptics";
-import React from "react";
+import React, { ReactNode } from "react";
 import {
-    Platform,
-    StyleProp,
-    Text,
-    TouchableOpacity,
-    ViewStyle,
+  Platform,
+  StyleProp,
+  Text,
+  TouchableOpacity,
+  ViewStyle,
 } from "react-native";
 import { styles } from "./JournalCard.styles";
 
@@ -17,6 +17,7 @@ export interface JournalCardProps {
   onPress?: () => void;
   style?: StyleProp<ViewStyle>;
   aspectSquare?: boolean;
+  children?: ReactNode;
 }
 
 export function JournalCard({
@@ -27,6 +28,7 @@ export function JournalCard({
   onPress,
   style,
   aspectSquare = false,
+  children,
 }: JournalCardProps) {
   const handlePress = () => {
     if (Platform.OS !== "web") {

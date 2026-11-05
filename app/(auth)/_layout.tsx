@@ -1,4 +1,5 @@
 import { Stack } from "expo-router";
+import React from "react";
 
 export default function AuthLayout() {
   return (
@@ -6,7 +7,6 @@ export default function AuthLayout() {
       screenOptions={{
         headerShown: false,
         contentStyle: { backgroundColor: "#FAF5EF" },
-        animation: "fade",
       }}
     >
       <Stack.Screen name="login" />

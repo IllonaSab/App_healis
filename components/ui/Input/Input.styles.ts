@@ -2,7 +2,6 @@ import { StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
   container: {
-    marginBottom: 16,
     width: "100%",
   },
   label: {
@@ -10,40 +9,38 @@ export const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#5C3636",
     marginBottom: 6,
-    marginLeft: 2,
   },
   inputWrapper: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FDFBF9",
+    backgroundColor: "#FDFCFA",
+    borderRadius: 14,
     borderWidth: 1.5,
-    borderColor: "#EADFD3",
-    borderRadius: 16,
+    borderColor: "#EFE8E1",
     paddingHorizontal: 14,
-    minHeight: 52,
   },
-  inputFocused: {
+  inputWrapperError: {
     borderColor: "#C46851",
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#C46851",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  inputError: {
-    borderColor: "#D9534F",
   },
   input: {
     flex: 1,
-    fontSize: 15,
+    height: 48,
+    fontSize: 14,
     color: "#38231E",
-    paddingVertical: 10,
+  },
+  eyeButton: {
+    paddingLeft: 10,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  eyeImage: {
+    width: 22,
+    height: 22,
   },
   errorText: {
-    fontSize: 12,
-    color: "#D9534F",
+    fontSize: 11.5,
+    color: "#C46851",
     marginTop: 4,
-    marginLeft: 4,
+    fontWeight: "500",
   },
 });

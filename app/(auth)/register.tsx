@@ -2,7 +2,6 @@ import { supabase } from "@/lib/supabase";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -12,8 +11,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Button } from "../../../components/ui/Button/Button";
-import { Input } from "../../../components/ui/Input/Input";
+import { Button } from "../../components/ui/Button/Button";
+import { Input } from "../../components/ui/Input/Input";
 import { styles } from "./register.styles";
 
 export default function RegisterScreen() {
@@ -54,14 +53,10 @@ export default function RegisterScreen() {
 
       if (error) throw error;
 
-      if (data.user && !data.session) {
-        Alert.alert(
-          "Vérification requise",
-          "Un lien de confirmation vient de vous être envoyé par email.",
-          [{ text: "Compris", onPress: () => router.replace("/(auth)/login") }]
-        );
+      if (data.session) {
+        router.replace("/");
       } else {
-        router.replace("/(tabs)");
+        router.replace("/login");
       }
     } catch (err: any) {
       setErrorMessage(err.message || "Erreur lors de la création du compte.");
@@ -83,11 +78,10 @@ export default function RegisterScreen() {
           bounces={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* En-tête immersif */}
           <View style={styles.header}>
             <View style={styles.logoBadge}>
               <Image
-                source={require("../../../assets/images/logo.png")}
+                source={require("../../assets/images/logo.png")}
                 style={styles.logoImage}
                 resizeMode="contain"
               />
@@ -95,15 +89,14 @@ export default function RegisterScreen() {
 
             <Text style={styles.appName}>Healis</Text>
             <Text style={styles.appSubtitle}>
-              Créer votre espace de soin et de bien-être
+              Créer votre espace de sérénité
             </Text>
           </View>
 
-          {/* Feuille de formulaire */}
           <View style={styles.formContainer}>
             <Text style={styles.formTitle}>Inscription</Text>
             <Text style={styles.formSubtitle}>
-              Rejoignez le programme d'accompagnement
+              Rejoignez Healis en quelques secondes
             </Text>
 
             {errorMessage ? (
@@ -114,44 +107,44 @@ export default function RegisterScreen() {
 
             <Input
               label="Adresse email"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
               value={email}
               onChangeText={(text: string) => {
                 setEmail(text);
                 if (errorMessage) setErrorMessage(null);
               }}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
               placeholder="nom@exemple.fr"
               containerStyle={styles.inputSpacing}
             />
 
             <Input
               label="Mot de passe"
-              secureTextEntry
               value={password}
               onChangeText={(text: string) => {
                 setPassword(text);
                 if (errorMessage) setErrorMessage(null);
               }}
-              placeholder="Au moins 6 caractères"
+              secureTextEntry
+              placeholder="6 caractères minimum"
               containerStyle={styles.inputSpacing}
             />
 
             <Input
-              label="Confirmation du mot de passe"
-              secureTextEntry
+              label="Confirmer le mot de passe"
               value={confirmPassword}
               onChangeText={(text: string) => {
                 setConfirmPassword(text);
                 if (errorMessage) setErrorMessage(null);
               }}
-              placeholder="Répétez votre mot de passe"
+              secureTextEntry
+              placeholder="••••••••"
               containerStyle={styles.inputSpacing}
             />
 
             <Button
-              title="Créer un compte"
+              title="Créer mon compte"
               variant="primary"
               loading={loading}
               onPress={handleRegister}
@@ -159,13 +152,15 @@ export default function RegisterScreen() {
             />
 
             <TouchableOpacity
-              onPress={() => router.back()}
+              onPress={() => router.replace("/login")}
               style={styles.switchAuthButton}
               activeOpacity={0.7}
             >
               <Text style={styles.switchAuthText}>
-                Déjà un compte ?{" "}
-                <Text style={styles.switchAuthHighlight}>Se connecter</Text>
+                Déjà inscrit ?{" "}
+                <Text style={styles.switchAuthHighlight}>
+                  Se connecter
+                </Text>
               </Text>
             </TouchableOpacity>
           </View>
