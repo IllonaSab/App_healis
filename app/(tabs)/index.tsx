@@ -14,16 +14,16 @@ const MOODS = [
     image: require("../../assets/images/calme.png"),
   },
   {
-    id: "anxious",
-    label: "Anxieux",
-    color: "#C46851",
-    image: require("../../assets/images/anxieux.png"),
-  },
-  {
     id: "soothed",
     label: "Apaisé",
     color: "#D98E73",
     image: require("../../assets/images/apaisé.png"),
+  },
+  {
+    id: "anxious",
+    label: "Anxieux",
+    color: "#C46851",
+    image: require("../../assets/images/anxieux.png"),
   },
   {
     id: "tired",
