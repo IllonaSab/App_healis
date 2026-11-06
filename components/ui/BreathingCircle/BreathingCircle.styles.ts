@@ -1,63 +1,50 @@
 import { StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
-  container: {
-    alignItems: "center",
+  animationArea: {
+    width: 240,
+    height: 240,
     justifyContent: "center",
-    paddingVertical: 24,
-  },
-  circleZone: {
-    width: 220,
-    height: 220,
     alignItems: "center",
+    marginBottom: 36,
+  },
+  outerCircle: {
+    width: 170,
+    height: 170,
+    borderRadius: 85,
+    borderWidth: 5,
+    backgroundColor: "#FAF6F1",
     justifyContent: "center",
-  },
-  outerWave: {
-    position: "absolute",
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: "#E3B89B",
-  },
-  innerWave: {
-    position: "absolute",
-    width: 110,
-    height: 110,
-    borderRadius: 55,
-    backgroundColor: "#C46851",
-  },
-  coreCircle: {
-    width: 86,
-    height: 86,
-    borderRadius: 43,
-    backgroundColor: "#A3483E",
     alignItems: "center",
+  },
+  innerCircle: {
+    width: 130,
+    height: 130,
+    borderRadius: 65,
+    backgroundColor: "#FFFFFF",
     justifyContent: "center",
-    shadowColor: "#C46851",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.35,
-    shadowRadius: 14,
-    elevation: 8,
-  },
-  coreGleam: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "rgba(255, 255, 255, 0.18)",
-  },
-  textContainer: {
-    marginTop: 20,
     alignItems: "center",
+    shadowColor: "#5C3636",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  instructionText: {
-    fontSize: 20,
-    fontWeight: "600",
+  phaseTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    marginBottom: 4,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  countdownNumber: {
+    fontSize: 26,
+    fontWeight: "800",
     color: "#38231E",
-    letterSpacing: -0.2,
   },
-  subHint: {
+  subtitleHint: {
     fontSize: 12,
     color: "#8C7A6B",
-    marginTop: 4,
+    fontWeight: "500",
   },
 });

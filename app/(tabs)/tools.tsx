@@ -1,199 +1,212 @@
+import { BreathingCircle } from "@/components/ui/BreathingCircle/BreathingCircle";
+import { Button } from "@/components/ui/Button/Button";
+import { Card } from "@/components/ui/Card/Card";
+import { ContactCard } from "@/components/ui/ContactCard/ContactCard";
+import { ScreenContainer } from "@/components/ui/ScreenContainer/ScreenContainer";
+import { SectionHeader } from "@/components/ui/SectionHeader/SectionHeader";
+import { StepItem } from "@/components/ui/StepItem/StepItem";
 import * as Haptics from "expo-haptics";
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
+  Animated,
+  Easing,
+  Linking,
   Platform,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
-import { BreathingCircle } from "../../components/ui/BreathingCircle/BreathingCircle";
-import { Card } from "../../components/ui/Card/Card";
-import { ScreenContainer } from "../../components/ui/ScreenContainer/ScreenContainer";
-import { SectionHeader } from "../../components/ui/SectionHeader/SectionHeader";
-import { StepItem } from "../../components/ui/StepItem/StepItem";
 
-interface ToolTab {
-  id: "breath" | "grounding" | "relax";
-  title: string;
-}
+type BreathPhase = "idle" | "inspire" | "hold" | "expire";
 
-const TOOLS: ToolTab[] = [
-  { id: "breath", title: "Respiration" },
-  { id: "grounding", title: "Ancrage" },
-  { id: "relax", title: "Relâchement" },
-];
-
-const GROUNDING_STEPS = [
-  { step: 3, label: "Vue", detail: "Remarquez 3 éléments visibles autour de vous." },
-  { step: 2, label: "Ouïe", detail: "Identifiez 2 sons ambiants ou discrets." },
-  { step: 1, label: "Toucher", detail: "Ressentez le contact physique de vos pieds sur le sol." },
-];
-
-const RELAX_STEPS = [
-  { step: 1, label: "Mâchoire", detail: "Desserrer les dents et laisser reposer la langue au palais." },
-  { step: 2, label: "Épaules", detail: "Abaisser les épaules loin des oreilles sur une expiration lente." },
-  { step: 3, label: "Ventre", detail: "Détendre le ventre en le laissant respirer à son rythme naturel." },
-];
+const PHASES: Record<
+  BreathPhase,
+  { label: string; duration: number; targetScale: number; color: string }
+> = {
+  idle: { label: "Prêt(e) ?", duration: 0, targetScale: 1, color: "#EFE8E1" },
+  inspire: { label: "Inspirez", duration: 4, targetScale: 1.45, color: "#E3B89B" },
+  hold: { label: "Bloquez", duration: 4, targetScale: 1.45, color: "#A3483E" },
+  expire: { label: "Expirez", duration: 4, targetScale: 1, color: "#C46851" },
+};
 
 export default function ToolsScreen() {
-  const [activeTab, setActiveTab] = useState<ToolTab["id"]>("breath");
-  const [isBreathing, setIsBreathing] = useState(false);
+  const [isActive, setIsActive] = useState(false);
+  const [phase, setPhase] = useState<BreathPhase>("idle");
+  const [countdown, setCountdown] = useState<number>(4);
 
-  const toggleBreathing = () => {
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const triggerHaptic = () => {
     if (Platform.OS !== "web") {
       try {
         Haptics.selectionAsync();
       } catch {}
     }
-    setIsBreathing((prev) => !prev);
   };
 
-  const handleTabChange = (id: ToolTab["id"]) => {
-    if (Platform.OS !== "web") {
-      try {
-        Haptics.selectionAsync();
-      } catch {}
-    }
-    setIsBreathing(false);
-    setActiveTab(id);
+  const startPhase = (nextPhase: BreathPhase) => {
+    setPhase(nextPhase);
+    triggerHaptic();
+
+    const config = PHASES[nextPhase];
+    setCountdown(config.duration);
+
+    Animated.timing(scaleAnim, {
+      toValue: config.targetScale,
+      duration: config.duration * 1000,
+      easing: Easing.inOut(Easing.ease),
+      useNativeDriver: true,
+    }).start();
+
+    let remaining = config.duration;
+    if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+
+    timerIntervalRef.current = setInterval(() => {
+      remaining -= 1;
+      if (remaining > 0) {
+        setCountdown(remaining);
+      } else {
+        if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+        if (nextPhase === "inspire") startPhase("hold");
+        else if (nextPhase === "hold") startPhase("expire");
+        else if (nextPhase === "expire") startPhase("inspire");
+      }
+    }, 1000);
   };
+
+  const handleStart = () => {
+    setIsActive(true);
+    startPhase("inspire");
+  };
+
+  const handleStop = () => {
+    if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+    setIsActive(false);
+    setPhase("idle");
+    setCountdown(4);
+
+    Animated.timing(scaleAnim, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handleCall = (phoneNumber: string) => {
+    const cleanNumber = phoneNumber.replace(/\s+/g, "");
+    Linking.openURL(`tel:${cleanNumber}`);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+    };
+  }, []);
+
+  const currentConfig = PHASES[phase];
 
   return (
     <ScreenContainer scrollable>
       <SectionHeader
-        surtitle="Reconnexion avec son corps"
-        title="Trois gestes simples"
-        description="Ces outils sont là pour vous accueillir, à votre rythme et sans jugement."
+        surtitle="Outils & Respiration"
+        title="Cohérence & Calme"
+        description="Prenez un temps pour réguler votre souffle et calmer la tension corporelle."
       />
 
-      {/* Ruban textuel de navigation */}
-      <View style={styles.ribbon}>
-        {TOOLS.map((t) => {
-          const active = activeTab === t.id;
-          return (
-            <TouchableOpacity
-              key={t.id}
-              onPress={() => handleTabChange(t.id)}
-              style={[styles.tab, active && styles.tabActive]}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.tabText, active && styles.tabTextActive]}>
-                {t.title}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+      {/* 1. EXERCICE DE RESPIRATION AVEC BreathingCircle */}
+      <Card style={styles.card}>
+        <BreathingCircle
+          label={currentConfig.label}
+          color={currentConfig.color}
+          scaleAnim={scaleAnim}
+          countdown={countdown}
+          isActive={isActive}
+        />
 
-      {/* 1. Respiration avec BreathingCircle */}
-      {activeTab === "breath" && (
-        <Card style={styles.contentCard}>
-          <Text style={styles.cardDesc}>
-            Rythme apaisant (4s inspire - 6s expire) pour réguler le système nerveux.
-          </Text>
-
-          <TouchableOpacity onPress={toggleBreathing} activeOpacity={0.9}>
-            <BreathingCircle
-              isActive={isBreathing}
-              instruction={
-                isBreathing
-                  ? "Suivez le flux du cercle"
-                  : "Touchez pour démarrer"
-              }
-              inhaleDuration={4000}
-              exhaleDuration={6000}
+        <View style={styles.actionWrap}>
+          {isActive ? (
+            <Button
+              title="Terminer la session"
+              variant="outline"
+              onPress={handleStop}
             />
-          </TouchableOpacity>
-        </Card>
-      )}
-
-      {/* 2. Ancrage avec StepItem */}
-      {activeTab === "grounding" && (
-        <Card style={styles.contentCard}>
-          <Text style={styles.sectionSubtitle}>La technique 3-2-1</Text>
-          <Text style={styles.cardDesc}>
-            Revenez dans l'instant présent pour couper le flux mental :
-          </Text>
-
-          {GROUNDING_STEPS.map((item) => (
-            <StepItem
-              key={item.step}
-              stepNumber={item.step}
-              label={item.label}
-              detail={item.detail}
+          ) : (
+            <Button
+              title="Commencer la respiration"
+              variant="primary"
+              onPress={handleStart}
             />
-          ))}
-        </Card>
-      )}
+          )}
+        </View>
+      </Card>
 
-      {/* 3. Relâchement avec StepItem */}
-      {activeTab === "relax" && (
-        <Card style={styles.contentCard}>
-          <Text style={styles.sectionSubtitle}>Scan doux des tensions</Text>
-          <Text style={styles.cardDesc}>
-            Parcourez trois points clés sans forcer la détente :
-          </Text>
+      {/* 2. ÉTAPES DU PROTOCOLE AVEC StepItem */}
+      <Text style={styles.sectionTitle}>Étapes d'ancrage corporel</Text>
+      <Card style={styles.cardPadding}>
+        <StepItem
+          stepNumber={1}
+          label="Inspiration ventrale"
+          detail="Gonflez le bas de votre ventre sans lever les épaules (4s)."
+          isCompleted={phase === "hold" || phase === "expire"}
+        />
+        <StepItem
+          stepNumber={2}
+          label="Suspension paisible"
+          detail="L'air repose en vous, relâchez vos mâchoires (4s)."
+          isCompleted={phase === "expire"}
+        />
+        <StepItem
+          stepNumber={3}
+          label="Expiration complète"
+          detail="Videz l'air doucement par la bouche comme à travers une paille (4s)."
+          isCompleted={false}
+        />
+      </Card>
 
-          {RELAX_STEPS.map((item) => (
-            <StepItem
-              key={item.step}
-              stepNumber={item.step}
-              label={item.label}
-              detail={item.detail}
-            />
-          ))}
-        </Card>
-      )}
+      {/* 3. LIGNES D'ÉCOUTE AVEC ContactCard */}
+      <Text style={styles.sectionTitle}>Besoin de parler ? (SOS)</Text>
+      <Card style={styles.cardPadding}>
+        <ContactCard
+          name="Ligne Écoute Anorexie Boulimie"
+          role="Permanence spécialisée TCA"
+          phone="0810 037 037"
+          onCall={() => handleCall("0810037037")}
+        />
+        <ContactCard
+          name="Numéro National Prévention Suicide"
+          role="Écoute bienveillante 24/7 gratuite"
+          phone="3114"
+          onCall={() => handleCall("3114")}
+          isLast
+        />
+      </Card>
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  ribbon: {
-    flexDirection: "row",
-    backgroundColor: "#F2ECE4",
-    padding: 4,
-    borderRadius: 16,
-    marginVertical: 16,
-  },
-  tab: {
-    flex: 1,
+  card: {
     alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 10,
-    borderRadius: 12,
+    paddingVertical: 32,
+    paddingHorizontal: 16,
+    marginBottom: 20,
   },
-  tabActive: {
-    backgroundColor: "#FFFFFF",
-    elevation: 2,
-    shadowColor: "#38231E",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 5,
+  cardPadding: {
+    padding: 16,
+    marginBottom: 20,
   },
-  tabText: {
-    fontSize: 12.5,
-    fontWeight: "600",
+  actionWrap: {
+    width: "100%",
+    paddingHorizontal: 8,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: "700",
     color: "#8C7A6B",
-  },
-  tabTextActive: {
-    color: "#38231E",
-    fontWeight: "700",
-  },
-  contentCard: {
-    marginBottom: 24,
-  },
-  sectionSubtitle: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#38231E",
-    marginBottom: 4,
-  },
-  cardDesc: {
-    fontSize: 12.5,
-    color: "#6B584C",
-    lineHeight: 18,
-    marginBottom: 16,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+    marginBottom: 10,
+    marginLeft: 4,
   },
 });
