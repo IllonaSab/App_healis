@@ -137,7 +137,7 @@ export default function JournalScreen() {
         })}
       </View>
 
-      {/* 2. Galets de sensation réutilisant JournalCard */}
+      {/* 2. Galets de sensation */}
       <View style={styles.grid}>
         {FEELINGS.map((f) => (
           <View key={f.id} style={styles.feelingCol}>
@@ -145,7 +145,9 @@ export default function JournalScreen() {
               label={f.label}
               isSelected={currentFeelingId === f.id}
               activeColor={f.color}
-              onPress={() => selectFeeling(f)}
+              onPress={() => {
+                void selectFeeling(f);
+              }}
               aspectSquare
             >
               <Image
@@ -273,8 +275,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   cardImage: {
-    width: 40,
-    height: 40,
+    width: 40,        
+    height: 40,       
     marginBottom: 6,
     alignSelf: "center",
   },

@@ -6,14 +6,14 @@ import { SettingRow } from "@/components/ui/SettingRow/SettingRow";
 import { supabase } from "@/lib/supabase";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
-    Alert,
-    Platform,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 const WEATHER_STATES = ["Sereine", "En chemin", "Brouillard", "Apaisée"];
@@ -21,6 +21,19 @@ const WEATHER_STATES = ["Sereine", "En chemin", "Brouillard", "Apaisée"];
 export default function ProfileScreen() {
   const router = useRouter();
   const [weatherIdx, setWeatherIdx] = useState(0);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadUserData() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user?.email) {
+        setUserEmail(user.email);
+      }
+    }
+    loadUserData();
+  }, []);
 
   const cycleWeather = () => {
     if (Platform.OS !== "web") {
@@ -35,7 +48,7 @@ export default function ProfileScreen() {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
-      router.replace("/(auth)/login");
+      router.replace("/login");
     } catch (err: any) {
       Alert.alert("Erreur", err.message || "Impossible de fermer la session.");
     }
@@ -69,7 +82,7 @@ export default function ProfileScreen() {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
 
-      router.replace("/(auth)/login");
+      router.replace("/login");
     } catch (err: any) {
       Alert.alert(
         "Erreur",
@@ -93,6 +106,9 @@ export default function ProfileScreen() {
     );
   };
 
+  const initialLetter = userEmail ? userEmail.charAt(0).toUpperCase() : "H";
+  const displayName = userEmail ? userEmail.split("@")[0] : "Chargement...";
+
   return (
     <ScreenContainer scrollable>
       <SectionHeader
@@ -105,10 +121,10 @@ export default function ProfileScreen() {
       <Card style={styles.card}>
         <View style={styles.userRow}>
           <View style={styles.natureBadge}>
-            <Text style={styles.natureInitial}>C</Text>
+            <Text style={styles.natureInitial}>{initialLetter}</Text>
           </View>
           <View style={styles.userInfoCol}>
-            <Text style={styles.userName}>Camille Durand</Text>
+            <Text style={styles.userName}>{displayName}</Text>
             <TouchableOpacity
               onPress={cycleWeather}
               activeOpacity={0.7}
@@ -138,7 +154,7 @@ export default function ProfileScreen() {
 
         <SettingRow
           title="Adresse e-mail"
-          value="camille.durand@email.com"
+          value={userEmail || "Non renseigné"}
           actionLabel="Modifier"
           onPress={() => {}}
         />
@@ -166,7 +182,7 @@ export default function ProfileScreen() {
 
         <SettingRow
           title="Abonnement"
-          value="Accompagnement Premium (12/12/2026)"
+          value="Accompagnement Healis (Actif)"
           actionLabel="Gérer"
           onPress={() => {}}
           isLast
@@ -233,6 +249,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#38231E",
     marginBottom: 3,
+    textTransform: "capitalize",
   },
   weatherButton: {
     flexDirection: "row",

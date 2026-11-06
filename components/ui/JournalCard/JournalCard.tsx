@@ -1,72 +1,42 @@
-import * as Haptics from "expo-haptics";
 import React, { ReactNode } from "react";
-import {
-  Platform,
-  StyleProp,
-  Text,
-  TouchableOpacity,
-  ViewStyle,
-} from "react-native";
-import { styles } from "./JournalCard.styles";
+import { StyleSheet, Text, TouchableOpacity } from "react-native";
 
 export interface JournalCardProps {
   label: string;
-  emoji?: string;
   isSelected?: boolean;
   activeColor?: string;
-  onPress?: () => void;
-  style?: StyleProp<ViewStyle>;
+  onPress?: () => void | Promise<void>;
   aspectSquare?: boolean;
-  children?: ReactNode;
+  children?: ReactNode; // <-- Vérifier la prop
 }
 
 export function JournalCard({
   label,
-  emoji,
   isSelected = false,
   activeColor = "#C46851",
   onPress,
-  style,
   aspectSquare = false,
-  children,
+  children, // <-- Récupérer children
 }: JournalCardProps) {
-  const handlePress = () => {
-    if (Platform.OS !== "web") {
-      try {
-        Haptics.selectionAsync();
-      } catch {}
-    }
-    onPress?.();
-  };
-
   return (
     <TouchableOpacity
-      activeOpacity={0.75}
-      onPress={handlePress}
+      activeOpacity={0.8}
+      onPress={onPress}
       style={[
-        styles.base,
+        styles.card,
         aspectSquare && styles.square,
-        isSelected && [
-          styles.selected,
-          {
-            borderColor: activeColor,
-            shadowColor: activeColor,
-          },
-        ],
-        style,
+        isSelected && {
+          borderColor: activeColor,
+          backgroundColor: `${activeColor}15`,
+        },
       ]}
     >
-      {emoji ? (
-        <Text style={aspectSquare ? styles.emojiBig : styles.emojiSmall}>
-          {emoji}
-        </Text>
-      ) : null}
+     {children}
 
       <Text
-        numberOfLines={2}
         style={[
-          styles.labelText,
-          isSelected && [styles.labelTextSelected, { color: activeColor }],
+          styles.label,
+          isSelected && { color: activeColor, fontWeight: "700" },
         ]}
       >
         {label}
@@ -74,3 +44,26 @@ export function JournalCard({
     </TouchableOpacity>
   );
 }
+
+const styles = StyleSheet.create({
+  card: {
+    backgroundColor: "#FDFCFA",
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: "#EFE8E1",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 6,
+  },
+  square: {
+    aspectRatio: 0.85,
+  },
+  label: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#5C3636",
+    textAlign: "center",
+    marginTop: 4,
+  },
+});
